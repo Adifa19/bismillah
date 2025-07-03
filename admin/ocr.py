@@ -6,158 +6,153 @@ import json
 from datetime import datetime
 
 def extract_amount(text):
-    """Ekstrak jumlah uang dari teks"""
-    # Normalisasi teks
+    """Ekstrak jumlah uang dari teks dengan berbagai format"""
+    # Bersihkan teks
     normalized = text.replace('oo', '00').replace('O', '0').replace('o', '0')
     normalized = normalized.replace(',', '.')
     
     # Pattern untuk mencari jumlah uang
     patterns = [
-        r'(?:nominal|jumlah|total|bayar|rp\.?)\s*:?\s*([\d\.,]+)',
-        r'rp\.?\s*([\d\.,]+)',
-        r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
-        r'(\d+\.?\d*)',
-        r'(\d+,?\d*)'
+        r'(?:nominal|jumlah|total|bayar|rp\.?)\s*:?\s*([\d.,]+)',
+        r'rp\.?\s*([\d.,]+)',
+        r'(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',  # Format Indonesia: 123.456,00
+        r'(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)',  # Format US: 123,456.00
+        r'(\d{4,})',  # Angka 4+ digit
     ]
     
-    amounts = []
+    found_amounts = []
     for pattern in patterns:
         matches = re.findall(pattern, normalized, re.IGNORECASE)
         for match in matches:
-            # Bersihkan dan konversi ke integer
-            clean_amount = re.sub(r'[^\d.,]', '', match)
-            # Hapus titik sebagai pemisah ribuan, ganti koma dengan titik
-            clean_amount = clean_amount.replace('.', '').replace(',', '.')
+            # Bersihkan dan konversi
+            clean_match = re.sub(r'[^\d.,]', '', match)
+            
+            # Coba parsing sebagai format Indonesia (123.456,00)
+            if ',' in clean_match and '.' in clean_match:
+                # Format: 123.456,00
+                amount_str = clean_match.replace('.', '').replace(',', '.')
+            elif '.' in clean_match:
+                # Jika ada titik, cek apakah ribuan atau desimal
+                parts = clean_match.split('.')
+                if len(parts) == 2 and len(parts[1]) <= 2:
+                    # Kemungkinan desimal: 123.45
+                    amount_str = clean_match
+                else:
+                    # Kemungkinan ribuan: 123.456
+                    amount_str = clean_match.replace('.', '')
+            else:
+                amount_str = clean_match
+            
             try:
-                amount = float(clean_amount)
-                if amount > 1000:  # Filter jumlah yang masuk akal
-                    amounts.append(int(amount))
+                amount = float(amount_str)
+                if 1000 <= amount <= 100000000:  # Range wajar untuk tagihan
+                    found_amounts.append(int(amount))
             except ValueError:
                 continue
     
-    # Kembalikan jumlah terbesar yang ditemukan
-    return max(amounts) if amounts else 0
+    return max(found_amounts) if found_amounts else 0
 
 def extract_date(text):
-    """Ekstrak tanggal dari teks"""
-    # Pattern untuk berbagai format tanggal
-    patterns = [
+    """Ekstrak tanggal dari teks dengan berbagai format"""
+    # Pattern untuk tanggal
+    date_patterns = [
         r'(?:tanggal|date|tgl|waktu|transfer|pembayaran|bayar)\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})',
         r'(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})',
-        r'(\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+\d{2,4})',
-        r'(\d{1,2}\s+(?:jan|feb|mar|apr|mei|jun|jul|ags|sep|okt|nov|des)\s+\d{2,4})',
+        r'(\d{1,2}\s+(?:jan|feb|mar|apr|mei|jun|jul|ags|sep|okt|nov|des)\w*\s+\d{2,4})',
         r'(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})',
-        r'(\d{8})'  # Format DDMMYYYY
     ]
     
-    for pattern in patterns:
+    found_dates = []
+    for pattern in date_patterns:
         matches = re.findall(pattern, text, re.IGNORECASE)
         for match in matches:
-            # Normalisasi format tanggal
-            normalized_date = normalize_date(match)
-            if normalized_date:
-                return normalized_date
+            # Validasi dan normalisasi tanggal
+            try:
+                # Coba parsing dengan berbagai format
+                date_formats = [
+                    '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y',
+                    '%d/%m/%y', '%d-%m-%y', '%d.%m.%y',
+                    '%Y/%m/%d', '%Y-%m-%d', '%Y.%m.%d',
+                ]
+                
+                for fmt in date_formats:
+                    try:
+                        parsed_date = datetime.strptime(match, fmt)
+                        # Konversi tahun 2 digit
+                        if parsed_date.year < 100:
+                            if parsed_date.year < 50:
+                                parsed_date = parsed_date.replace(year=parsed_date.year + 2000)
+                            else:
+                                parsed_date = parsed_date.replace(year=parsed_date.year + 1900)
+                        
+                        # Validasi range tahun
+                        current_year = datetime.now().year
+                        if current_year - 2 <= parsed_date.year <= current_year + 1:
+                            found_dates.append(parsed_date.strftime('%Y-%m-%d'))
+                            break
+                    except ValueError:
+                        continue
+            except:
+                continue
     
-    return None
-
-def normalize_date(date_str):
-    """Normalisasi format tanggal"""
-    # Mapping bulan Indonesia ke angka
-    month_map = {
-        'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
-        'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
-        'september': '09', 'oktober': '10', 'november': '11', 'desember': '12',
-        'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
-        'mei': '05', 'jun': '06', 'jul': '07', 'ags': '08',
-        'sep': '09', 'okt': '10', 'nov': '11', 'des': '12'
-    }
-    
-    date_str = date_str.lower().strip()
-    
-    # Format Indonesia: 15 Januari 2024
-    for month_name, month_num in month_map.items():
-        if month_name in date_str:
-            parts = date_str.split()
-            if len(parts) >= 3:
-                day = parts[0].zfill(2)
-                year = parts[2]
-                if len(year) == 2:
-                    year = '20' + year
-                return f"{year}-{month_num}-{day}"
-    
-    # Format DD/MM/YYYY atau DD-MM-YYYY
-    if re.match(r'\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}', date_str):
-        parts = re.split(r'[\/\-\.]', date_str)
-        if len(parts) == 3:
-            day = parts[0].zfill(2)
-            month = parts[1].zfill(2)
-            year = parts[2]
-            if len(year) == 2:
-                year = '20' + year
-            return f"{year}-{month}-{day}"
-    
-    # Format YYYY-MM-DD
-    if re.match(r'\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}', date_str):
-        parts = re.split(r'[\/\-\.]', date_str)
-        if len(parts) == 3:
-            year = parts[0]
-            month = parts[1].zfill(2)
-            day = parts[2].zfill(2)
-            return f"{year}-{month}-{day}"
-    
-    # Format DDMMYYYY
-    if len(date_str) == 8 and date_str.isdigit():
-        day = date_str[:2]
-        month = date_str[2:4]
-        year = date_str[4:]
-        return f"{year}-{month}-{day}"
-    
-    return None
+    return found_dates[0] if found_dates else ''
 
 def extract_code(text, expected_code=''):
     """Ekstrak kode tagihan dari teks"""
-    # Jika ada expected code, cari berdasarkan pattern yang mirip
+    # Jika ada expected code, cari yang mirip
     if expected_code:
-        # Cari pattern yang mirip dengan expected code
-        prefix = expected_code[:3]
-        pattern = f'{prefix}[-\\s]?\\d{{3,6}}[-\\s]?\\d{{1,3}}'
-        match = re.search(pattern, text, re.IGNORECASE)
+        # Cari kode yang dimulai dengan 3 karakter pertama expected code
+        prefix = expected_code[:3].upper()
+        pattern = rf'({re.escape(prefix)}[\-\s]?[\dA-Z]+)'
+        match = re.search(pattern, text.upper())
         if match:
-            return match.group(0).replace(' ', '').upper()
+            return match.group(1).replace(' ', '').replace('-', '')
     
     # Pattern umum untuk kode tagihan
-    patterns = [
-        r'([A-Z]{2,3}[\-_]?\d{3,6}[\-_]?\d{1,3})',
-        r'(TAG[\-_]?\d{3,6}[\-_]?\d{1,3})',
-        r'([A-Z]+\d+)',
-        r'(TAG\d+)'
+    code_patterns = [
+        r'(TAG[\-\s]?\d{6,10}[\-\s]?\d{1,3})',
+        r'([A-Z]{2,3}[\-\s]?\d{3,8})',
+        r'([A-Z]+\d{3,})',
+        r'(REF[\-\s]?[\dA-Z]+)',
+        r'(BILL[\-\s]?[\dA-Z]+)',
     ]
     
-    for pattern in patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
-        for match in matches:
-            return match.upper().replace(' ', '')
+    for pattern in code_patterns:
+        match = re.search(pattern, text.upper())
+        if match:
+            return match.group(1).replace(' ', '').replace('-', '')
     
-    return None
+    return ''
 
 def calculate_confidence(results):
     """Hitung confidence score berdasarkan hasil OCR"""
     if not results:
         return 0
     
-    total_confidence = 0
-    total_chars = 0
+    total_confidence = sum([res[2] for res in results])
+    avg_confidence = total_confidence / len(results)
     
-    for result in results:
-        confidence = result[2]  # EasyOCR confidence
-        text_length = len(result[1])
-        total_confidence += confidence * text_length
-        total_chars += text_length
+    # Faktor tambahan berdasarkan kualitas teks
+    text_quality = 0
+    total_text = ' '.join([res[1] for res in results])
     
-    return (total_confidence / total_chars * 100) if total_chars > 0 else 0
+    # Semakin banyak teks yang terbaca, semakin tinggi confidence
+    if len(total_text) > 50:
+        text_quality += 20
+    elif len(total_text) > 20:
+        text_quality += 10
+    
+    # Bonus jika ada kata kunci yang relevan
+    keywords = ['transfer', 'bayar', 'pembayaran', 'nominal', 'jumlah', 'rp', 'rupiah']
+    for keyword in keywords:
+        if keyword in total_text.lower():
+            text_quality += 5
+    
+    final_confidence = min(100, avg_confidence * 100 + text_quality)
+    return round(final_confidence, 2)
 
 def main():
-    # Ambil argumen
+    # Validasi argumen
     if len(sys.argv) < 2:
         print("ERROR: No image path provided")
         sys.exit(1)
@@ -166,7 +161,7 @@ def main():
     expected_code = sys.argv[2] if len(sys.argv) > 2 else ''
     expected_amount = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 0
     
-    # Cek file exists
+    # Validasi file
     if not os.path.exists(image_path):
         print("ERROR: File not found")
         sys.exit(1)
@@ -178,21 +173,31 @@ def main():
         # Jalankan OCR
         results = reader.readtext(image_path)
         
+        if not results:
+            print("ERROR: No text detected")
+            sys.exit(1)
+        
         # Gabungkan semua teks
         all_text = ' '.join([res[1] for res in results if len(res[1].strip()) > 1])
         
-        # Ekstrak data
+        # Ekstrak informasi
         extracted_amount = extract_amount(all_text)
         extracted_date = extract_date(all_text)
         extracted_code = extract_code(all_text, expected_code)
         confidence = calculate_confidence(results)
         
-        # Output dengan format yang diharapkan PHP
-        print(f"AMOUNT:{extracted_amount}")
-        print(f"DATE:{extracted_date or ''}")
-        print(f"CODE:{extracted_code or ''}")
-        print(f"CONFIDENCE:{confidence:.2f}")
-        print(f"TEXT:{all_text}")
+        # Output dalam format yang diharapkan PHP
+        print(f"EXTRACTED_TEXT: {all_text}")
+        print(f"AMOUNT: {extracted_amount}")
+        print(f"DATE: {extracted_date}")
+        print(f"CODE: {extracted_code}")
+        print(f"CONFIDENCE: {confidence}")
+        
+        # Debug info (akan diabaikan PHP jika tidak diperlukan)
+        print(f"DEBUG_EXPECTED_AMOUNT: {expected_amount}")
+        print(f"DEBUG_EXPECTED_CODE: {expected_code}")
+        print(f"DEBUG_AMOUNT_MATCH: {extracted_amount == expected_amount}")
+        print(f"DEBUG_CODE_MATCH: {extracted_code.upper() == expected_code.upper() if expected_code else 'No expected code'}")
         
     except Exception as e:
         print(f"ERROR: {str(e)}")
