@@ -361,72 +361,238 @@ function extractCode($text, $expected_code = '') {
     return '';
 }
 
-// Fungsi run_ocr yang diperbaiki untuk debugging
+// Fungsi run_ocr yang diperbaiki dengan error handling yang lebih baik
 function run_ocr($file_path, $kode_tagihan = '', $jumlah_tagihan = 0) {
+    // Cek apakah file ada
     $full_path = realpath($file_path);
     if (!file_exists($full_path)) {
-        error_log("File tidak ditemukan: " . $file_path);
-        return array('text' => '', 'jumlah' => 0, 'tanggal' => '', 'kode' => '', 'confidence' => 0);
+        error_log("OCR ERROR: File tidak ditemukan: " . $file_path);
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'File tidak ditemukan'
+        );
     }
 
-    // Escape shell command dengan parameter tambahan
-    $command = escapeshellcmd("python ocr.py " . escapeshellarg($full_path) . " " . escapeshellarg($kode_tagihan) . " " . escapeshellarg($jumlah_tagihan));
-    $output = shell_exec($command);
+    // Cek apakah file bisa dibaca
+    if (!is_readable($full_path)) {
+        error_log("OCR ERROR: File tidak dapat dibaca: " . $full_path);
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'File tidak dapat dibaca'
+        );
+    }
+
+    // Cek apakah file ocr.py ada
+    if (!file_exists('ocr.py')) {
+        error_log("OCR ERROR: File ocr.py tidak ditemukan");
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'OCR script tidak ditemukan'
+        );
+    }
+
+    // Buat command dengan error handling
+    $command = "python ocr.py " . escapeshellarg($full_path) . " " . escapeshellarg($kode_tagihan) . " " . escapeshellarg($jumlah_tagihan) . " 2>&1";
     
     error_log("OCR Command: " . $command);
-    error_log("OCR Raw Output: " . $output);
     
-    // Parse output OCR yang lebih detail
+    // Eksekusi command
+    $output = shell_exec($command);
+    
+    error_log("OCR Raw Output: " . ($output ? $output : 'NULL/EMPTY'));
+    
+    // Cek apakah ada output
+    if (empty($output)) {
+        error_log("OCR ERROR: Tidak ada output dari Python script");
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'Tidak ada output dari OCR script'
+        );
+    }
+
+    // Parse output OCR
     $result = array(
         'text' => trim($output),
         'jumlah' => 0,
         'tanggal' => '',
         'kode' => '',
-        'confidence' => 0
+        'confidence' => 0,
+        'error' => ''
     );
     
-    if ($output) {
-        $lines = explode("\n", trim($output));
-        foreach ($lines as $line) {
-            if (strpos($line, 'AMOUNT:') === 0) {
-                $result['jumlah'] = intval(str_replace('AMOUNT:', '', $line));
-            } elseif (strpos($line, 'DATE:') === 0) {
-                $result['tanggal'] = trim(str_replace('DATE:', '', $line));
-            } elseif (strpos($line, 'CODE:') === 0) {
-                $result['kode'] = trim(str_replace('CODE:', '', $line));
-            } elseif (strpos($line, 'CONFIDENCE:') === 0) {
-                $result['confidence'] = floatval(str_replace('CONFIDENCE:', '', $line));
-            }
-        }
+    // Cek apakah output mengandung error
+    if (strpos($output, 'ERROR:') !== false || strpos($output, 'Traceback') !== false) {
+        error_log("OCR ERROR: Python script mengalami error: " . $output);
+        $result['error'] = 'Python script error: ' . $output;
+        return $result;
+    }
+    
+    // Parse output berdasarkan format yang diharapkan
+    $lines = explode("\n", trim($output));
+    $parsed_any = false;
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line)) continue;
         
-        // Fallback parsing jika format output tidak sesuai
-        if ($result['jumlah'] == 0) {
-            $result['jumlah'] = extractAmount($output);
-        }
-        if (empty($result['tanggal'])) {
-            $result['tanggal'] = extractDate($output);
-        }
-        if (empty($result['kode'])) {
-            $result['kode'] = extractCode($output, $kode_tagihan);
+        if (strpos($line, 'AMOUNT:') === 0) {
+            $amount_str = trim(str_replace('AMOUNT:', '', $line));
+            $result['jumlah'] = intval($amount_str);
+            $parsed_any = true;
+            error_log("OCR: Parsed amount: " . $result['jumlah']);
+        } 
+        elseif (strpos($line, 'DATE:') === 0) {
+            $result['tanggal'] = trim(str_replace('DATE:', '', $line));
+            $parsed_any = true;
+            error_log("OCR: Parsed date: " . $result['tanggal']);
+        } 
+        elseif (strpos($line, 'CODE:') === 0) {
+            $result['kode'] = trim(str_replace('CODE:', '', $line));
+            $parsed_any = true;
+            error_log("OCR: Parsed code: " . $result['kode']);
+        } 
+        elseif (strpos($line, 'CONFIDENCE:') === 0) {
+            $confidence_str = trim(str_replace('CONFIDENCE:', '', $line));
+            $result['confidence'] = floatval($confidence_str);
+            $parsed_any = true;
+            error_log("OCR: Parsed confidence: " . $result['confidence']);
         }
     }
     
-    error_log("OCR Result: " . json_encode($result));
+    // Jika tidak ada yang berhasil diparsing, coba fallback parsing
+    if (!$parsed_any) {
+        error_log("OCR: Tidak ada data yang berhasil diparsing, mencoba fallback parsing...");
+        
+        // Fallback parsing untuk jumlah
+        if ($result['jumlah'] == 0) {
+            $result['jumlah'] = extractAmount($output);
+            error_log("OCR Fallback: Extracted amount: " . $result['jumlah']);
+        }
+        
+        // Fallback parsing untuk tanggal
+        if (empty($result['tanggal'])) {
+            $result['tanggal'] = extractDate($output);
+            error_log("OCR Fallback: Extracted date: " . $result['tanggal']);
+        }
+        
+        // Fallback parsing untuk kode
+        if (empty($result['kode'])) {
+            $result['kode'] = extractCode($output, $kode_tagihan);
+            error_log("OCR Fallback: Extracted code: " . $result['kode']);
+        }
+        
+        // Jika masih tidak ada yang berhasil
+        if ($result['jumlah'] == 0 && empty($result['tanggal']) && empty($result['kode'])) {
+            $result['error'] = 'Tidak dapat mengekstrak data dari OCR output';
+        }
+    }
+    
+    error_log("OCR Final Result: " . json_encode($result));
     return $result;
 }
 
-// Fungsi generate QR Code data
-function generateQRCodeData($bill_info) {
-    $qr_data = "KONFIRMASI PEMBAYARAN\n";
-    $qr_data .= "Kode: " . $bill_info['kode_tagihan'] . "\n";
-    $qr_data .= "Username: " . $bill_info['username'] . "\n";
-    $qr_data .= "Jumlah: Rp " . number_format($bill_info['jumlah'], 0, ',', '.') . "\n";
-    $qr_data .= "Deskripsi: " . $bill_info['deskripsi'] . "\n";
-    $qr_data .= "Status: TERKONFIRMASI\n";
-    $qr_data .= "Tanggal Konfirmasi: " . date('d/m/Y H:i:s') . "\n";
-    $qr_data .= "Hash: " . md5($bill_info['kode_tagihan'] . $bill_info['user_id'] . time());
+// Fungsi untuk test OCR secara manual
+function test_ocr_manual($file_path) {
+    echo "<h3>Test OCR Manual</h3>";
+    echo "<p>File: " . htmlspecialchars($file_path) . "</p>";
     
-    return $qr_data;
+    // Cek file
+    if (!file_exists($file_path)) {
+        echo "<p style='color: red;'>❌ File tidak ditemukan</p>";
+        return;
+    }
+    
+    echo "<p style='color: green;'>✅ File ditemukan</p>";
+    echo "<p>Ukuran file: " . formatBytes(filesize($file_path)) . "</p>";
+    
+    // Cek Python
+    $python_test = shell_exec("python --version 2>&1");
+    echo "<p>Python version: " . htmlspecialchars($python_test) . "</p>";
+    
+    // Cek OCR script
+    if (!file_exists('ocr.py')) {
+        echo "<p style='color: red;'>❌ ocr.py tidak ditemukan</p>";
+        return;
+    }
+    
+    echo "<p style='color: green;'>✅ ocr.py ditemukan</p>";
+    
+    // Test OCR
+    $result = run_ocr($file_path, 'TEST123', 100000);
+    
+    echo "<h4>Hasil OCR:</h4>";
+    echo "<pre>" . htmlspecialchars(print_r($result, true)) . "</pre>";
+    
+    // Tampilkan gambar
+    if (strpos($file_path, 'http') === 0) {
+        echo "<img src='" . htmlspecialchars($file_path) . "' style='max-width: 500px; margin-top: 20px;'>";
+    } else {
+        $relative_path = str_replace($_SERVER['DOCUMENT_ROOT'], '', $file_path);
+        echo "<img src='" . htmlspecialchars($relative_path) . "' style='max-width: 500px; margin-top: 20px;'>";
+    }
+}
+
+function formatBytes($bytes, $precision = 2) {
+    $units = array('B', 'KB', 'MB', 'GB', 'TB');
+    
+    for ($i = 0; $bytes > 1024; $i++) {
+        $bytes /= 1024;
+    }
+    
+    return round($bytes, $precision) . ' ' . $units[$i];
+}
+
+// Fungsi untuk debug OCR dengan output yang lebih detail
+function debug_ocr_process($user_bill_id) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi
+            FROM user_bills ub 
+            JOIN bills b ON ub.bill_id = b.id
+            WHERE ub.id = ?
+        ");
+        $stmt->execute([$user_bill_id]);
+        $bill = $stmt->fetch();
+        
+        if (!$bill) {
+            echo "Bill tidak ditemukan!";
+            return;
+        }
+        
+        $file_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
+        
+        echo "<div style='background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;'>";
+        echo "<h3>Debug OCR Process</h3>";
+        echo "<p><strong>Bill ID:</strong> " . $bill['id'] . "</p>";
+        echo "<p><strong>Kode Tagihan:</strong> " . htmlspecialchars($bill['kode_tagihan']) . "</p>";
+        echo "<p><strong>Jumlah:</strong> Rp " . number_format($bill['jumlah'], 0, ',', '.') . "</p>";
+        echo "<p><strong>File:</strong> " . htmlspecialchars($bill['bukti_pembayaran']) . "</p>";
+        
+        test_ocr_manual($file_path);
+        
+        echo "</div>";
+        
+    } catch (Exception $e) {
+        echo "<p style='color: red;'>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
+    }
 }
 
 // Function untuk generate QR Code URL
