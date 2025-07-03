@@ -5,17 +5,51 @@ import re
 import json
 from datetime import datetime
 import logging
+import cv2
+import numpy as np
+from PIL import Image, ImageEnhance
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def preprocess_image(image_path):
+    """Preprocessing gambar untuk meningkatkan akurasi OCR"""
+    try:
+        # Baca gambar dengan OpenCV
+        img = cv2.imread(image_path)
+        if img is None:
+            logger.error(f"Cannot read image: {image_path}")
+            return image_path
+        
+        # Convert ke grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Tingkatkan kontras
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(gray)
+        
+        # Noise reduction
+        denoised = cv2.fastNlMeansDenoising(enhanced)
+        
+        # Threshold untuk binarisasi
+        _, thresh = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        # Simpan gambar hasil preprocessing
+        temp_path = image_path + '_processed.jpg'
+        cv2.imwrite(temp_path, thresh)
+        
+        logger.info(f"Image preprocessed: {temp_path}")
+        return temp_path
+        
+    except Exception as e:
+        logger.error(f"Error preprocessing image: {str(e)}")
+        return image_path
+
 def preprocess_text(text):
     """Preprocessing teks untuk memperbaiki kesalahan OCR umum"""
     # Normalisasi karakter yang sering salah dibaca OCR
     replacements = {
-        # Hindari replacement yang terlalu agresif untuk angka
-        # 'oo': '00', 'O': '0', 'o': '0',  # Hapus ini karena terlalu agresif
         'S': '5', 'l': '1', 'I': '1',
         'B': '8', 'G': '6', 'Z': '2',
         'Q': '0', 'D': '0',
@@ -32,16 +66,18 @@ def preprocess_text(text):
     
     return processed
 
-def extract_amount(text):
+def extract_amount(text, expected_amount=0):
     """Ekstrak jumlah uang dari teks dengan berbagai pattern yang lebih akurat"""
-    # Log text yang akan diproses
-    logger.info(f"Extracting amount from: {text}")
+    logger.info(f"Extracting amount from: {text[:200]}...")
+    
+    # Bersihkan teks terlebih dahulu
+    clean_text = re.sub(r'\s+', ' ', text)
     
     patterns = [
         # Pattern untuk Rupiah dengan format yang lebih spesifik
         r'Rp\.?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
-        r'(?:JUMLAH|NOMINAL|TOTAL|BAYAR|TRANSFER|NILAI|AMOUNT)\s*:?\s*Rp\.?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
-        r'(?:JUMLAH|NOMINAL|TOTAL|BAYAR|TRANSFER|NILAI|AMOUNT)\s*:?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
+        r'(?:JUMLAH|NOMINAL|TOTAL|BAYAR|TRANSFER|NILAI|AMOUNT|SEBESAR)\s*:?\s*Rp\.?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
+        r'(?:JUMLAH|NOMINAL|TOTAL|BAYAR|TRANSFER|NILAI|AMOUNT|SEBESAR)\s*:?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
         
         # Pattern untuk format dengan titik sebagai pemisah ribuan
         r'Rp\.?\s*(\d{1,3}(?:\.\d{3})+)',
@@ -60,46 +96,56 @@ def extract_amount(text):
         r'(\d{1,3}(?:\s\d{3})+)',
         
         # Pattern untuk transfer/pembayaran
-        r'(?:transfer|bayar|pembayaran|setoran)\s*:?\s*Rp\.?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
-        r'(?:transfer|bayar|pembayaran|setoran)\s*:?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+        r'(?:transfer|bayar|pembayaran|setoran|debit|kredit|saldo|mutasi)\s*:?\s*Rp\.?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+        r'(?:transfer|bayar|pembayaran|setoran|debit|kredit|saldo|mutasi)\s*:?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+        
+        # Pattern untuk struk ATM/m-banking
+        r'(?:nominal|jumlah|total|nilai)\s*:?\s*(\d{1,3}(?:[.,]\d{3})*)',
+        r'(?:BERHASIL|SUCCESS|SUKSES)\s*.*?(\d{1,3}(?:[.,]\d{3})*)',
     ]
     
     found_amounts = []
     
     for pattern in patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
+        matches = re.findall(pattern, clean_text, re.IGNORECASE)
         for match in matches:
             # Bersihkan dan konversi ke integer
             clean_amount = re.sub(r'[^\d]', '', match)
             if clean_amount and len(clean_amount) >= 3:  # Minimal 3 digit (100)
                 try:
                     amount = int(clean_amount)
-                    if amount >= 100:  # Minimal 100 rupiah
+                    if 100 <= amount <= 100000000:  # Range wajar untuk tagihan
                         found_amounts.append(amount)
                         logger.info(f"Amount found: {amount} from match: {match} with pattern: {pattern}")
                 except ValueError:
                     continue
     
-    # Jika ada beberapa amount, prioritaskan yang masuk akal
+    # Jika ada expected_amount, cari yang paling dekat
+    if expected_amount > 0 and found_amounts:
+        closest_amount = min(found_amounts, key=lambda x: abs(x - expected_amount))
+        if abs(closest_amount - expected_amount) / expected_amount <= 0.1:  # Toleransi 10%
+            logger.info(f"Found closest amount to expected: {closest_amount} (expected: {expected_amount})")
+            return closest_amount
+    
+    # Jika tidak ada yang cocok dengan expected, ambil yang paling masuk akal
     if found_amounts:
-        # Urutkan dan ambil yang paling masuk akal
         found_amounts.sort(reverse=True)
-        
-        # Filter amount yang terlalu kecil atau terlalu besar
         valid_amounts = [amt for amt in found_amounts if 100 <= amt <= 100000000]
         
         if valid_amounts:
-            # Jika ada expected amount, cari yang paling dekat
             selected_amount = valid_amounts[0]
             logger.info(f"Selected amount: {selected_amount} from candidates: {valid_amounts}")
             return selected_amount
     
     logger.info("No valid amount found")
-    return None
+    return 0
 
 def extract_date(text):
     """Ekstrak tanggal dari teks dengan berbagai format yang lebih akurat"""
-    logger.info(f"Extracting date from: {text}")
+    logger.info(f"Extracting date from: {text[:200]}...")
+    
+    # Bersihkan teks
+    clean_text = re.sub(r'\s+', ' ', text)
     
     patterns = [
         # Format DD/MM/YYYY atau DD-MM-YYYY
@@ -111,29 +157,33 @@ def extract_date(text):
         r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|Mei|Jun|Jul|Ags|Sep|Okt|Nov|Des)\s+\d{4})',
         
         # Format dengan kata kunci
-        r'(?:TANGGAL|DATE|TGL|WAKTU|TRANSFER|BAYAR|PEMBAYARAN|WAKTU\s+TRANSFER)\s*:?\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
-        r'(?:TANGGAL|DATE|TGL|WAKTU|TRANSFER|BAYAR|PEMBAYARAN)\s*:?\s*(\d{1,2}\s+\w+\s+\d{4})',
+        r'(?:TANGGAL|DATE|TGL|WAKTU|TRANSFER|BAYAR|PEMBAYARAN|WAKTU\s+TRANSFER|TRANSAKSI)\s*:?\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+        r'(?:TANGGAL|DATE|TGL|WAKTU|TRANSFER|BAYAR|PEMBAYARAN|TRANSAKSI)\s*:?\s*(\d{1,2}\s+\w+\s+\d{4})',
         
         # Format timestamp bank
-        r'(\d{2}[-/]\d{2}[-/]\d{4}\s+\d{2}:\d{2})',
+        r'(\d{2}[-/]\d{2}[-/]\d{4})\s+\d{2}:\d{2}',
         r'(\d{4}[-/]\d{2}[-/]\d{2})',
         
         # Format dengan spasi
         r'(\d{1,2}\s+\d{1,2}\s+\d{4})',
         
         # Format khusus untuk receipt/struk
-        r'(?:TGL|TANGGAL|DATE)\s*:?\s*(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4})',
+        r'(?:TGL|TANGGAL|DATE|WAKTU|TRANSFER|TRANSAKSI)\s*:?\s*(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4})',
         r'(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4})\s+\d{2}:\d{2}',
+        
+        # Format m-banking/internet banking
+        r'(?:pada|tgl|tanggal|waktu|jam|pukul)\s*:?\s*(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4})',
+        r'(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4})\s*(?:WIB|WITA|WIT)',
     ]
     
     found_dates = []
     
     for pattern in patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
+        matches = re.findall(pattern, clean_text, re.IGNORECASE)
         for match in matches:
             # Validasi dan normalize tanggal
             normalized_date = normalize_date(match)
-            if normalized_date:
+            if normalized_date and is_valid_date(normalized_date):
                 found_dates.append(normalized_date)
                 logger.info(f"Date found: {normalized_date} from match: {match} with pattern: {pattern}")
     
@@ -160,7 +210,7 @@ def extract_date(text):
             return selected_date
     
     logger.info("No valid date found")
-    return None
+    return ""
 
 def normalize_date(date_str):
     """Normalisasi format tanggal ke YYYY-MM-DD"""
@@ -228,13 +278,34 @@ def normalize_date(date_str):
     
     return None
 
+def is_valid_date(date_str):
+    """Validasi apakah tanggal valid dan masuk akal"""
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        current_date = datetime.now()
+        
+        # Validasi range tahun (10 tahun ke belakang, 1 tahun ke depan)
+        if date_obj.year < current_date.year - 10 or date_obj.year > current_date.year + 1:
+            return False
+        
+        # Validasi tidak lebih dari hari ini
+        if date_obj > current_date:
+            return False
+        
+        return True
+    except ValueError:
+        return False
+
 def extract_code(text, expected_code=""):
     """Ekstrak kode tagihan dari teks dengan akurasi lebih tinggi"""
-    logger.info(f"Extracting code from: {text}, expected: {expected_code}")
+    logger.info(f"Extracting code from: {text[:200]}..., expected: {expected_code}")
+    
+    # Bersihkan teks
+    clean_text = re.sub(r'\s+', ' ', text)
     
     patterns = [
         # Pattern untuk kode tagihan umum
-        r'(?:KODE|CODE|REF|REFERENSI|TAG|TAGIHAN|INVOICE|NO\.?\s*REF)\s*:?\s*([A-Z0-9\-_]{4,15})',
+        r'(?:KODE|CODE|REF|REFERENSI|TAG|TAGIHAN|INVOICE|NO\.?\s*REF|KODE\s*TAGIHAN)\s*:?\s*([A-Z0-9\-_]{4,15})',
         r'([A-Z]{2,4}[-\s]?\d{4,10})',
         r'([A-Z]+\d{4,})',
         r'(TAG[-\s]?\d{4,10})',
@@ -243,6 +314,13 @@ def extract_code(text, expected_code=""):
         # Pattern berdasarkan format umum kode tagihan
         r'([A-Z]{2,4}\d{4,}[A-Z0-9]*)',
         r'([A-Z0-9]{6,15})',
+        
+        # Pattern untuk kode dengan format khusus
+        r'([A-Z]{2,}[-_]\d{4,})',
+        r'([A-Z]{2,}\d{4,}[A-Z]*)',
+        
+        # Pattern untuk nomor referensi
+        r'(?:NO\.|NOMOR|NUMBER|REF|REFERENCE)\s*:?\s*([A-Z0-9\-_]{4,15})',
     ]
     
     # Jika ada expected_code, tambahkan pattern khusus
@@ -254,7 +332,7 @@ def extract_code(text, expected_code=""):
     found_codes = []
     
     for pattern in patterns:
-        matches = re.findall(pattern, text, re.IGNORECASE)
+        matches = re.findall(pattern, clean_text, re.IGNORECASE)
         for match in matches:
             clean_code = re.sub(r'\s+', '', match).upper()
             if len(clean_code) >= 4:  # Minimal 4 karakter
@@ -281,7 +359,7 @@ def extract_code(text, expected_code=""):
         return selected_code
     
     logger.info("No valid code found")
-    return None
+    return ""
 
 def calculate_confidence(results):
     """Hitung confidence score berdasarkan hasil OCR"""
@@ -307,7 +385,7 @@ def calculate_confidence(results):
 def main():
     # Validasi argumen
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "No image path provided."}))
+        print("ERROR: No image path provided.")
         sys.exit(1)
     
     image_path = sys.argv[1]
@@ -315,25 +393,28 @@ def main():
     expected_amount = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 0
     
     if not os.path.exists(image_path):
-        print(json.dumps({"error": "File not found."}))
+        print("ERROR: File not found.")
         sys.exit(1)
     
     try:
+        # Preprocessing gambar
+        processed_image = preprocess_image(image_path)
+        
         # Inisialisasi EasyOCR dengan parameter yang lebih baik
         reader = easyocr.Reader(['id', 'en'], gpu=False)
         
         # Jalankan OCR dengan parameter yang disesuaikan untuk akurasi lebih tinggi
         results = reader.readtext(
-            image_path,
+            processed_image,
             detail=1,
-            paragraph=False,
-            width_ths=0.8,      # Threshold untuk menggabungkan teks secara horizontal
-            height_ths=0.8,     # Threshold untuk menggabungkan teks secara vertikal
-            adjust_contrast=0.3, # Penyesuaian kontras yang lebih halus
-            filter_ths=0.2,     # Filter untuk menghilangkan teks dengan confidence rendah
-            text_threshold=0.5,  # Threshold untuk deteksi teks
-            low_text=0.3,       # Threshold untuk deteksi teks dengan confidence rendah
-            link_threshold=0.3   # Threshold untuk menggabungkan karakter
+            paragraph=True,  # Ubah ke True untuk menggabungkan teks dalam paragraf
+            width_ths=0.7,      # Threshold untuk menggabungkan teks secara horizontal
+            height_ths=0.7,     # Threshold untuk menggabungkan teks secara vertikal
+            adjust_contrast=0.5, # Penyesuaian kontras yang lebih agresif
+            filter_ths=0.1,     # Filter untuk menghilangkan teks dengan confidence rendah
+            text_threshold=0.6,  # Threshold untuk deteksi teks
+            low_text=0.4,       # Threshold untuk deteksi teks dengan confidence rendah
+            link_threshold=0.4   # Threshold untuk menggabungkan karakter
         )
         
         # Gabungkan semua teks yang terdeteksi
@@ -351,7 +432,7 @@ def main():
         confidence = calculate_confidence(results)
         
         # Ekstrak informasi
-        extracted_amount = extract_amount(processed_text)
+        extracted_amount = extract_amount(processed_text, expected_amount)
         extracted_date = extract_date(processed_text)
         extracted_code = extract_code(processed_text, expected_code)
         
@@ -367,30 +448,19 @@ def main():
         logger.info(f"Confidence: {confidence}")
         
         # Output dalam format yang diharapkan PHP
-        print(f"AMOUNT:{extracted_amount or 0}")
-        print(f"DATE:{extracted_date or ''}")
-        print(f"CODE:{extracted_code or ''}")
+        print(f"AMOUNT:{extracted_amount}")
+        print(f"DATE:{extracted_date}")
+        print(f"CODE:{extracted_code}")
         print(f"CONFIDENCE:{confidence}")
         print(f"TEXT:{raw_text}")
         
-        # Format output JSON untuk debugging
-        output = {
-            "extracted_text": raw_text,
-            "normalized_text": processed_text,
-            "jumlah": extracted_amount or 0,
-            "tanggal": extracted_date or '',
-            "kode_tagihan": extracted_code or '',
-            "confidence": confidence,
-            "results_count": len(results),
-            "expected_code": expected_code,
-            "expected_amount": expected_amount
-        }
-        
-        print(f"JSON:{json.dumps(output, ensure_ascii=False)}")
+        # Hapus file temporary jika ada
+        if processed_image != image_path and os.path.exists(processed_image):
+            os.remove(processed_image)
         
     except Exception as e:
         logger.error(f"OCR Error: {str(e)}")
-        print(json.dumps({"error": str(e)}))
+        print(f"ERROR: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
