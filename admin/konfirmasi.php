@@ -361,73 +361,785 @@ function extractCode($text, $expected_code = '') {
     return '';
 }
 
-// Fungsi run_ocr yang diperbaiki untuk debugging
+// Fungsi run_ocr yang diperbaiki dengan error handling yang lebih baik
 function run_ocr($file_path, $kode_tagihan = '', $jumlah_tagihan = 0) {
     $full_path = realpath($file_path);
+    
+    // Validasi file
     if (!file_exists($full_path)) {
         error_log("File tidak ditemukan: " . $file_path);
-        return array('text' => '', 'jumlah' => 0, 'tanggal' => '', 'kode' => '', 'confidence' => 0);
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'File tidak ditemukan'
+        );
     }
-
-    // Escape shell command dengan parameter tambahan
-    $command = escapeshellcmd("python ocr.py " . escapeshellarg($full_path) . " " . escapeshellarg($kode_tagihan) . " " . escapeshellarg($jumlah_tagihan));
-    $output = shell_exec($command);
+    
+    // Validasi ekstensi file
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    $file_extension = strtolower(pathinfo($full_path, PATHINFO_EXTENSION));
+    
+    if (!in_array($file_extension, $allowed_extensions)) {
+        error_log("Format file tidak didukung: " . $file_extension);
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'Format file tidak didukung'
+        );
+    }
+    
+    // Validasi ukuran file (maksimal 10MB)
+    $file_size = filesize($full_path);
+    if ($file_size > 10 * 1024 * 1024) {
+        error_log("File terlalu besar: " . $file_size . " bytes");
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0,
+            'error' => 'File terlalu besar'
+        );
+    }
+    
+    // Persiapkan command dengan timeout
+    $python_path = 'python3'; // Sesuaikan dengan sistem Anda
+    $script_path = __DIR__ . '/ocr.py'; // Sesuaikan dengan lokasi script
+    
+    $command = sprintf(
+        'timeout 60 %s %s %s %s %s 2>&1',
+        escapeshellcmd($python_path),
+        escapeshellarg($script_path),
+        escapeshellarg($full_path),
+        escapeshellarg($kode_tagihan),
+        escapeshellarg($jumlah_tagihan)
+    );
     
     error_log("OCR Command: " . $command);
-    error_log("OCR Raw Output: " . $output);
     
-    // Parse output OCR yang lebih detail
+    // Jalankan command
+    $output = shell_exec($command);
+    $exit_code = shell_exec("echo $?");
+    
+    error_log("OCR Raw Output: " . $output);
+    error_log("OCR Exit Code: " . $exit_code);
+    
+    // Inisialisasi hasil
     $result = array(
-        'text' => trim($output),
+        'text' => '',
         'jumlah' => 0,
         'tanggal' => '',
         'kode' => '',
-        'confidence' => 0
+        'confidence' => 0,
+        'error' => ''
     );
     
-    if ($output) {
-        $lines = explode("\n", trim($output));
-        foreach ($lines as $line) {
-            if (strpos($line, 'AMOUNT:') === 0) {
-                $result['jumlah'] = intval(str_replace('AMOUNT:', '', $line));
-            } elseif (strpos($line, 'DATE:') === 0) {
-                $result['tanggal'] = trim(str_replace('DATE:', '', $line));
-            } elseif (strpos($line, 'CODE:') === 0) {
-                $result['kode'] = trim(str_replace('CODE:', '', $line));
-            } elseif (strpos($line, 'CONFIDENCE:') === 0) {
-                $result['confidence'] = floatval(str_replace('CONFIDENCE:', '', $line));
-            }
-        }
+    if (empty($output) || trim($exit_code) != '0') {
+        $result['error'] = 'OCR gagal dijalankan';
+        return $result;
+    }
+    
+    // Parse output
+    $lines = explode("\n", trim($output));
+    $json_data = null;
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
         
-        // Fallback parsing jika format output tidak sesuai
-        if ($result['jumlah'] == 0) {
-            $result['jumlah'] = extractAmount($output);
-        }
-        if (empty($result['tanggal'])) {
-            $result['tanggal'] = extractDate($output);
-        }
-        if (empty($result['kode'])) {
-            $result['kode'] = extractCode($output, $kode_tagihan);
+        if (strpos($line, 'AMOUNT:') === 0) {
+            $amount_str = str_replace('AMOUNT:', '', $line);
+            $result['jumlah'] = is_numeric($amount_str) ? intval($amount_str) : 0;
+            
+        } elseif (strpos($line, 'DATE:') === 0) {
+            $result['tanggal'] = trim(str_replace('DATE:', '', $line));
+            
+        } elseif (strpos($line, 'CODE:') === 0) {
+            $result['kode'] = trim(str_replace('CODE:', '', $line));
+            
+        } elseif (strpos($line, 'CONFIDENCE:') === 0) {
+            $confidence_str = str_replace('CONFIDENCE:', '', $line);
+            $result['confidence'] = is_numeric($confidence_str) ? floatval($confidence_str) : 0;
+            
+        } elseif (strpos($line, 'TEXT:') === 0) {
+            $result['text'] = trim(str_replace('TEXT:', '', $line));
+            
+        } elseif (strpos($line, 'JSON:') === 0) {
+            $json_str = str_replace('JSON:', '', $line);
+            $json_data = json_decode($json_str, true);
+            
+        } elseif (strpos($line, 'ERROR:') === 0) {
+            $result['error'] = trim(str_replace('ERROR:', '', $line));
         }
     }
     
-    error_log("OCR Result: " . json_encode($result));
+    // Jika ada data JSON, gunakan sebagai fallback
+    if ($json_data && is_array($json_data)) {
+        if (empty($result['text']) && !empty($json_data['extracted_text'])) {
+            $result['text'] = $json_data['extracted_text'];
+        }
+        if ($result['jumlah'] == 0 && !empty($json_data['jumlah'])) {
+            $result['jumlah'] = intval($json_data['jumlah']);
+        }
+        if (empty($result['tanggal']) && !empty($json_data['tanggal'])) {
+            $result['tanggal'] = $json_data['tanggal'];
+        }
+        if (empty($result['kode']) && !empty($json_data['kode_tagihan'])) {
+            $result['kode'] = $json_data['kode_tagihan'];
+        }
+        if ($result['confidence'] == 0 && !empty($json_data['confidence'])) {
+            $result['confidence'] = floatval($json_data['confidence']);
+        }
+    }
+    
+    // Fallback parsing jika masih ada yang kosong
+    if (!empty($result['text'])) {
+        if ($result['jumlah'] == 0) {
+            $result['jumlah'] = extractAmount($result['text']);
+        }
+        if (empty($result['tanggal'])) {
+            $result['tanggal'] = extractDate($result['text']);
+        }
+        if (empty($result['kode'])) {
+            $result['kode'] = extractCode($result['text'], $kode_tagihan);
+        }
+    }
+    
+    // Validasi hasil
+    if ($result['jumlah'] > 0 && $jumlah_tagihan > 0) {
+        $difference = abs($result['jumlah'] - $jumlah_tagihan);
+        $percentage = ($difference / $jumlah_tagihan) * 100;
+        
+        // Jika selisih lebih dari 5%, mungkin ada kesalahan
+        if ($percentage > 5) {
+            error_log("Warning: Selisih jumlah signifikan - OCR: {$result['jumlah']}, Expected: {$jumlah_tagihan}");
+        }
+    }
+    
+    error_log("OCR Final Result: " . json_encode($result));
     return $result;
 }
 
-// Fungsi generate QR Code data
-function generateQRCodeData($bill_info) {
-    $qr_data = "KONFIRMASI PEMBAYARAN\n";
-    $qr_data .= "Kode: " . $bill_info['kode_tagihan'] . "\n";
-    $qr_data .= "Username: " . $bill_info['username'] . "\n";
-    $qr_data .= "Jumlah: Rp " . number_format($bill_info['jumlah'], 0, ',', '.') . "\n";
-    $qr_data .= "Deskripsi: " . $bill_info['deskripsi'] . "\n";
-    $qr_data .= "Status: TERKONFIRMASI\n";
-    $qr_data .= "Tanggal Konfirmasi: " . date('d/m/Y H:i:s') . "\n";
-    $qr_data .= "Hash: " . md5($bill_info['kode_tagihan'] . $bill_info['user_id'] . time());
+// Fungsi extractAmount yang diperbaiki
+function extractAmount($text) {
+    if (empty($text)) return 0;
     
-    return $qr_data;
+    // Normalisasi teks
+    $text = preg_replace('/\s+/', ' ', $text);
+    
+    $patterns = [
+        // Pattern untuk Rupiah dengan berbagai format
+        '/Rp\.?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)/i',
+        '/(?:jumlah|nominal|total|bayar|transfer)\s*:?\s*Rp\.?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)/i',
+        '/(?:jumlah|nominal|total|bayar|transfer)\s*:?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)/i',
+        
+        // Pattern untuk angka besar tanpa prefix
+        '/(\d{1,3}(?:[.,]\d{3}){2,})/',  // Minimal 3 grup digit
+        '/(\d{6,})/',  // Minimal 6 digit berturut-turut
+        
+        // Pattern dengan separator spasi
+        '/(\d{1,3}(?:\s\d{3})*)/i',
+        
+        // Pattern untuk format bank (misal: 100,000.00)
+        '/(\d+[.,]\d{3}(?:[.,]\d{3})*(?:[.,]\d{2})?)/i'
+    ];
+    
+    foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $text, $matches)) {
+            // Bersihkan string angka
+            $angka_str = $matches[1];
+            $angka_str = str_replace(' ', '', $angka_str);
+            
+            // Deteksi format (titik vs koma sebagai separator)
+            if (preg_match('/\d+\.\d{2}$/', $angka_str)) {
+                // Format xxx.xx (titik sebagai desimal)
+                $angka_str = str_replace(',', '', $angka_str);
+            } else {
+                // Format xxx,xxx (koma sebagai separator ribuan)
+                $angka_str = str_replace(',', '', $angka_str);
+                $angka_str = str_replace('.', '', $angka_str);
+            }
+            
+            $amount = intval($angka_str);
+            if ($amount >= 1000) {  // Minimal 1000 rupiah
+                return $amount;
+            }
+        }
+    }
+    
+    return 0;
 }
+
+// Fungsi extractDate yang diperbaiki
+function extractDate($text) {
+    if (empty($text)) return '';
+    
+    error_log("Extracting date from: " . $text);
+    
+    $patterns = [
+        // Format DD/MM/YYYY atau DD-MM-YYYY
+        '/(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})/i',
+        '/(\d{1,2}[-\/]\d{1,2}[-\/]\d{2})/i',
+        
+        // Format Indonesia
+        '/(\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+\d{4})/i',
+        '/(\d{1,2}\s+(?:jan|feb|mar|apr|mei|jun|jul|ags|sep|okt|nov|des)\s+\d{4})/i',
+        
+        // Format dengan kata kunci
+        '/(?:tanggal|date|tgl|waktu|transfer|bayar|pembayaran)\s*:?\s*(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i',
+        '/(?:tanggal|date|tgl|waktu|transfer|bayar|pembayaran)\s*:?\s*(\d{1,2}\s+\w+\s+\d{4})/i',
+        
+        // Format ISO
+        '/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/i',
+        
+        // Format dengan spasi
+        '/(\d{1,2}\s+\d{1,2}\s+\d{4})/i',
+    ];
+    
+    foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $text, $matches)) {
+            $date_str = trim($matches[1]);
+            $normalized_date = normalizeDate($date_str);
+            
+            if ($normalized_date && isValidDate($normalized_date)) {
+                error_log("Date extracted: " . $normalized_date);
+                return $normalized_date;
+            }
+        }
+    }
+    
+    error_log("No valid date found in text");
+    return '';
+}
+
+// Fungsi extractCode yang diperbaiki
+function extractCode($text, $expected_code = '') {
+    if (empty($text)) return '';
+    
+    $patterns = [
+        // Pattern umum untuk kode tagihan
+        '/([A-Z]{2,4}[-\s]?\d{6,10})/i',
+        '/([A-Z]+\d{6,})/i',
+        '/(TAG[-\s]?\d{6,10})/i',
+        
+        // Pattern dengan kata kunci
+        '/(?:kode|code|ref|referensi|tag|tagihan)\s*:?\s*([A-Z0-9\-_]{6,})/i',
+        
+        // Pattern berdasarkan expected_code
+        '/([A-Z]{2,4}\d{6,})/i',
+        '/(\d{6,}[A-Z]{2,})/i',
+    ];
+    
+    // Jika ada expected_code, tambahkan pattern khusus
+    if (!empty($expected_code)) {
+        $prefix = substr($expected_code, 0, 3);
+        $patterns[] = '/(' . preg_quote($prefix, '/') . '[-\s]?\d+)/i';
+    }
+    
+    foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $text, $matches)) {
+            $code = strtoupper(str_replace([' ', '-'], '', $matches[1]));
+            if (strlen($code) >= 6) {
+                return $code;
+            }
+        }
+    }
+    
+    return '';
+}
+
+// Fungsi untuk debugging hasil OCR
+function debugOCRResult($bill) {
+    if (!isset($_GET['debug']) || $_GET['debug'] != '1') {
+        return;
+    }
+    
+    echo "<div class='debug-panel' style='background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px;'>";
+    echo "<h4>Debug OCR Result</h4>";
+    echo "<strong>User Bill ID:</strong> " . $bill['user_bill_id'] . "<br>";
+    echo "<strong>File:</strong> " . $bill['bukti_pembayaran'] . "<br>";
+    echo "<strong>OCR Jumlah:</strong> " . $bill['ocr_jumlah'] . "<br>";
+    echo "<strong>Expected Jumlah:</strong> " . $bill['jumlah'] . "<br>";
+    echo "<strong>OCR Confidence:</strong> " . $bill['ocr_confidence'] . "%<br>";
+    echo "<strong>OCR Kode Found:</strong> " . ($bill['ocr_kode_found'] ? 'Yes' : 'No') . "<br>";
+    echo "<strong>OCR Date Found:</strong> " . ($bill['ocr_date_found'] ? 'Yes' : 'No') . "<br>";
+    
+    if ($bill['ocr_details']) {
+        $details = json_decode($bill['ocr_details'], true);
+        if ($details) {
+            echo "<strong>OCR Details:</strong><br>";
+            echo "<pre>" . json_encode($details, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "</pre>";
+        }
+    }
+    echo "</div>";
+}
+
+/ Lanjutan dari fungsi testOCR
+function testOCR($file_path, $expected_code = '', $expected_amount = 0) {
+    echo "<div class='test-ocr-panel' style='background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px;'>";
+    echo "<h4>Test OCR Result</h4>";
+    echo "<strong>File:</strong> " . basename($file_path) . "<br>";
+    
+    $result = run_ocr($file_path, $expected_code, $expected_amount);
+    
+    echo "<strong>Text Found:</strong> " . (empty($result['text']) ? 'None' : substr($result['text'], 0, 100) . '...') . "<br>";
+    echo "<strong>Amount:</strong> " . ($result['jumlah'] ?: 'Not found') . "<br>";
+    echo "<strong>Date:</strong> " . ($result['tanggal'] ?: 'Not found') . "<br>";
+    echo "<strong>Code:</strong> " . ($result['kode'] ?: 'Not found') . "<br>";
+    echo "<strong>Confidence:</strong> " . $result['confidence'] . "%<br>";
+    
+    if (!empty($result['error'])) {
+        echo "<strong style='color: red;'>Error:</strong> " . $result['error'] . "<br>";
+    }
+    
+    // Validasi hasil
+    echo "<h5>Validation:</h5>";
+    $validation_score = 0;
+    
+    if ($result['jumlah'] > 0) {
+        echo "✓ Amount detected<br>";
+        $validation_score += 25;
+        
+        if ($expected_amount > 0) {
+            $difference = abs($result['jumlah'] - $expected_amount);
+            $percentage = ($difference / $expected_amount) * 100;
+            
+            if ($percentage <= 5) {
+                echo "✓ Amount matches expected (within 5%)<br>";
+                $validation_score += 25;
+            } else {
+                echo "⚠ Amount differs from expected: " . $percentage . "% difference<br>";
+            }
+        }
+    } else {
+        echo "✗ No amount detected<br>";
+    }
+    
+    if (!empty($result['tanggal'])) {
+        echo "✓ Date detected<br>";
+        $validation_score += 25;
+    } else {
+        echo "✗ No date detected<br>";
+    }
+    
+    if (!empty($result['kode'])) {
+        echo "✓ Code detected<br>";
+        $validation_score += 25;
+        
+        if (!empty($expected_code) && stripos($result['kode'], $expected_code) !== false) {
+            echo "✓ Code matches expected<br>";
+        } elseif (!empty($expected_code)) {
+            echo "⚠ Code differs from expected<br>";
+        }
+    } else {
+        echo "✗ No code detected<br>";
+    }
+    
+    echo "<strong>Overall Score:</strong> " . $validation_score . "/100<br>";
+    echo "</div>";
+    
+    return $result;
+}
+
+// Fungsi untuk normalisasi tanggal
+function normalizeDate($date_str) {
+    if (empty($date_str)) return '';
+    
+    // Bulan Indonesia ke angka
+    $months = [
+        'januari' => '01', 'jan' => '01',
+        'februari' => '02', 'feb' => '02',
+        'maret' => '03', 'mar' => '03',
+        'april' => '04', 'apr' => '04',
+        'mei' => '05',
+        'juni' => '06', 'jun' => '06',
+        'juli' => '07', 'jul' => '07',
+        'agustus' => '08', 'ags' => '08',
+        'september' => '09', 'sep' => '09',
+        'oktober' => '10', 'okt' => '10',
+        'november' => '11', 'nov' => '11',
+        'desember' => '12', 'des' => '12'
+    ];
+    
+    $date_str = trim(strtolower($date_str));
+    
+    // Ganti nama bulan dengan angka
+    foreach ($months as $month_name => $month_num) {
+        $date_str = str_replace($month_name, $month_num, $date_str);
+    }
+    
+    // Normalisasi separator
+    $date_str = preg_replace('/[-\s]+/', '-', $date_str);
+    
+    // Parse berbagai format
+    $patterns = [
+        '/^(\d{1,2})-(\d{1,2})-(\d{4})$/',     // DD-MM-YYYY
+        '/^(\d{1,2})-(\d{1,2})-(\d{2})$/',     // DD-MM-YY
+        '/^(\d{4})-(\d{1,2})-(\d{1,2})$/',     // YYYY-MM-DD
+    ];
+    
+    foreach ($patterns as $pattern) {
+        if (preg_match($pattern, $date_str, $matches)) {
+            if (count($matches) == 4) {
+                $part1 = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+                $part2 = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+                $part3 = $matches[3];
+                
+                // Jika tahun 2 digit, ubah ke 4 digit
+                if (strlen($part3) == 2) {
+                    $part3 = '20' . $part3;
+                }
+                
+                // Tentukan format berdasarkan pattern
+                if ($pattern === '/^(\d{4})-(\d{1,2})-(\d{1,2})$/') {
+                    // YYYY-MM-DD
+                    return $part1 . '-' . $part2 . '-' . $part3;
+                } else {
+                    // DD-MM-YYYY
+                    return $part1 . '-' . $part2 . '-' . $part3;
+                }
+            }
+        }
+    }
+    
+    return '';
+}
+
+// Fungsi untuk validasi tanggal
+function isValidDate($date_str) {
+    if (empty($date_str)) return false;
+    
+    $parts = explode('-', $date_str);
+    if (count($parts) != 3) return false;
+    
+    $day = intval($parts[0]);
+    $month = intval($parts[1]);
+    $year = intval($parts[2]);
+    
+    // Validasi range
+    if ($year < 1900 || $year > 2100) return false;
+    if ($month < 1 || $month > 12) return false;
+    if ($day < 1 || $day > 31) return false;
+    
+    // Validasi dengan checkdate
+    return checkdate($month, $day, $year);
+}
+
+// Fungsi untuk preprocessing gambar sebelum OCR
+function preprocessImage($file_path) {
+    $processed_path = $file_path . '_processed.jpg';
+    
+    // Cek apakah ImageMagick tersedia
+    if (!extension_loaded('imagick')) {
+        error_log("ImageMagick not available, using original image");
+        return $file_path;
+    }
+    
+    try {
+        $image = new Imagick($file_path);
+        
+        // Resize jika terlalu besar
+        if ($image->getImageWidth() > 2000 || $image->getImageHeight() > 2000) {
+            $image->resizeImage(2000, 2000, Imagick::FILTER_LANCZOS, 1, true);
+        }
+        
+        // Enhance contrast dan brightness
+        $image->normalizeImage();
+        $image->enhanceImage();
+        
+        // Convert to grayscale untuk OCR yang lebih baik
+        $image->setImageColorspace(Imagick::COLORSPACE_GRAY);
+        
+        // Sharpen sedikit
+        $image->sharpenImage(0, 1);
+        
+        // Simpan sebagai JPEG dengan kualitas tinggi
+        $image->setImageFormat('jpeg');
+        $image->setImageCompressionQuality(95);
+        $image->writeImage($processed_path);
+        
+        $image->clear();
+        $image->destroy();
+        
+        error_log("Image preprocessed: " . $processed_path);
+        return $processed_path;
+        
+    } catch (Exception $e) {
+        error_log("Image preprocessing failed: " . $e->getMessage());
+        return $file_path;
+    }
+}
+
+// Fungsi untuk cleanup file temporary
+function cleanupTempFiles($file_path) {
+    $temp_files = [
+        $file_path . '_processed.jpg',
+        $file_path . '_ocr_temp.txt',
+        $file_path . '_debug.json'
+    ];
+    
+    foreach ($temp_files as $temp_file) {
+        if (file_exists($temp_file)) {
+            unlink($temp_file);
+        }
+    }
+}
+
+// Fungsi untuk batch OCR processing
+function batchOCR($file_list, $progress_callback = null) {
+    $results = [];
+    $total = count($file_list);
+    
+    foreach ($file_list as $index => $file_info) {
+        $file_path = $file_info['path'];
+        $expected_code = $file_info['code'] ?? '';
+        $expected_amount = $file_info['amount'] ?? 0;
+        
+        if ($progress_callback) {
+            call_user_func($progress_callback, $index + 1, $total, $file_path);
+        }
+        
+        $result = run_ocr($file_path, $expected_code, $expected_amount);
+        $result['file_path'] = $file_path;
+        $result['index'] = $index;
+        
+        $results[] = $result;
+        
+        // Cleanup temp files
+        cleanupTempFiles($file_path);
+        
+        // Small delay to prevent system overload
+        usleep(100000); // 0.1 second
+    }
+    
+    return $results;
+}
+
+// Fungsi untuk generate laporan OCR
+function generateOCRReport($results, $output_path = null) {
+    $report = [
+        'summary' => [
+            'total_files' => count($results),
+            'successful_ocr' => 0,
+            'failed_ocr' => 0,
+            'amount_detected' => 0,
+            'date_detected' => 0,
+            'code_detected' => 0,
+            'average_confidence' => 0,
+            'total_amount' => 0
+        ],
+        'details' => []
+    ];
+    
+    $total_confidence = 0;
+    $confidence_count = 0;
+    
+    foreach ($results as $result) {
+        $detail = [
+            'file' => basename($result['file_path']),
+            'success' => empty($result['error']),
+            'amount' => $result['jumlah'],
+            'date' => $result['tanggal'],
+            'code' => $result['kode'],
+            'confidence' => $result['confidence'],
+            'error' => $result['error']
+        ];
+        
+        $report['details'][] = $detail;
+        
+        // Update summary
+        if ($detail['success']) {
+            $report['summary']['successful_ocr']++;
+            
+            if ($result['jumlah'] > 0) {
+                $report['summary']['amount_detected']++;
+                $report['summary']['total_amount'] += $result['jumlah'];
+            }
+            
+            if (!empty($result['tanggal'])) {
+                $report['summary']['date_detected']++;
+            }
+            
+            if (!empty($result['kode'])) {
+                $report['summary']['code_detected']++;
+            }
+            
+            if ($result['confidence'] > 0) {
+                $total_confidence += $result['confidence'];
+                $confidence_count++;
+            }
+        } else {
+            $report['summary']['failed_ocr']++;
+        }
+    }
+    
+    // Calculate average confidence
+    if ($confidence_count > 0) {
+        $report['summary']['average_confidence'] = round($total_confidence / $confidence_count, 2);
+    }
+    
+    // Calculate percentages
+    $total = $report['summary']['total_files'];
+    if ($total > 0) {
+        $report['summary']['success_rate'] = round(($report['summary']['successful_ocr'] / $total) * 100, 2);
+        $report['summary']['amount_detection_rate'] = round(($report['summary']['amount_detected'] / $total) * 100, 2);
+        $report['summary']['date_detection_rate'] = round(($report['summary']['date_detected'] / $total) * 100, 2);
+        $report['summary']['code_detection_rate'] = round(($report['summary']['code_detected'] / $total) * 100, 2);
+    }
+    
+    // Save report if output path specified
+    if ($output_path) {
+        file_put_contents($output_path, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    
+    return $report;
+}
+
+// Fungsi untuk optimasi OCR berdasarkan jenis dokumen
+function optimizeOCRForDocument($file_path, $document_type = 'receipt') {
+    $optimization_params = [
+        'receipt' => [
+            'dpi' => 300,
+            'psm' => 6,  // Uniform block of text
+            'oem' => 1,  // Neural nets LSTM only
+            'config' => '-c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,-/:() '
+        ],
+        'invoice' => [
+            'dpi' => 300,
+            'psm' => 6,
+            'oem' => 1,
+            'config' => ''
+        ],
+        'bank_statement' => [
+            'dpi' => 300,
+            'psm' => 4,  // Single column of text
+            'oem' => 1,
+            'config' => ''
+        ],
+        'form' => [
+            'dpi' => 300,
+            'psm' => 6,
+            'oem' => 1,
+            'config' => ''
+        ]
+    ];
+    
+    return $optimization_params[$document_type] ?? $optimization_params['receipt'];
+}
+
+// Fungsi untuk validasi format kode tagihan
+function validateBillCode($code, $expected_pattern = '') {
+    if (empty($code)) return false;
+    
+    // Pattern umum untuk kode tagihan Indonesia
+    $common_patterns = [
+        '/^[A-Z]{2,4}\d{6,12}$/',           // 2-4 huruf + 6-12 angka
+        '/^\d{6,12}[A-Z]{2,4}$/',           // 6-12 angka + 2-4 huruf
+        '/^[A-Z]{2,4}[-]\d{6,12}$/',        // 2-4 huruf + strip + 6-12 angka
+        '/^\d{6,12}[-][A-Z]{2,4}$/',        // 6-12 angka + strip + 2-4 huruf
+        '/^[A-Z]\d{6,12}[A-Z]$/',           // 1 huruf + 6-12 angka + 1 huruf
+    ];
+    
+    // Jika ada expected pattern, gunakan itu
+    if (!empty($expected_pattern)) {
+        return preg_match($expected_pattern, $code);
+    }
+    
+    // Cek dengan pattern umum
+    foreach ($common_patterns as $pattern) {
+        if (preg_match($pattern, $code)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Fungsi untuk post-processing hasil OCR
+function postProcessOCRResult($result, $context = []) {
+    // Koreksi common OCR errors
+    $corrections = [
+        'jumlah' => [
+            'O' => '0',  // Huruf O ke angka 0
+            'I' => '1',  // Huruf I ke angka 1
+            'S' => '5',  // Huruf S ke angka 5
+            'B' => '8',  // Huruf B ke angka 8
+        ],
+        'kode' => [
+            '0' => 'O',  // Angka 0 ke huruf O dalam kode
+            '1' => 'I',  // Angka 1 ke huruf I dalam kode
+            '5' => 'S',  // Angka 5 ke huruf S dalam kode
+            '8' => 'B',  // Angka 8 ke huruf B dalam kode
+        ]
+    ];
+    
+    // Apply corrections
+    if (!empty($result['kode'])) {
+        // Tentukan apakah kode harus diawali huruf atau angka
+        $first_char = substr($result['kode'], 0, 1);
+        if (is_numeric($first_char)) {
+            // Kode diawali angka, koreksi huruf yang salah
+            foreach ($corrections['jumlah'] as $wrong => $correct) {
+                $result['kode'] = str_replace($wrong, $correct, $result['kode']);
+            }
+        } else {
+            // Kode diawali huruf, koreksi angka yang salah
+            foreach ($corrections['kode'] as $wrong => $correct) {
+                $result['kode'] = str_replace($wrong, $correct, $result['kode']);
+            }
+        }
+    }
+    
+    // Validasi dan koreksi jumlah
+    if ($result['jumlah'] > 0) {
+        // Cek apakah jumlah masuk akal (tidak terlalu kecil atau besar)
+        if ($result['jumlah'] < 100) {
+            // Mungkin ada kesalahan parsing, coba ekstrak ulang
+            $result['jumlah'] = extractAmount($result['text']);
+        }
+        
+        // Bulatkan ke kelipatan 100 jika memungkinkan
+        if ($result['jumlah'] % 100 < 50 && $result['jumlah'] % 100 > 0) {
+            $rounded = floor($result['jumlah'] / 100) * 100;
+            if ($rounded > 0) {
+                $result['jumlah'] = $rounded;
+            }
+        }
+    }
+    
+    return $result;
+}
+
+// Export fungsi untuk penggunaan external
+if (!function_exists('ocr_extract_data')) {
+    function ocr_extract_data($file_path, $options = []) {
+        $kode_tagihan = $options['expected_code'] ?? '';
+        $jumlah_tagihan = $options['expected_amount'] ?? 0;
+        $document_type = $options['document_type'] ?? 'receipt';
+        
+        // Preprocess image jika diperlukan
+        if (!empty($options['preprocess'])) {
+            $file_path = preprocessImage($file_path);
+        }
+        
+        // Run OCR
+        $result = run_ocr($file_path, $kode_tagihan, $jumlah_tagihan);
+        
+        // Post-process hasil
+        $result = postProcessOCRResult($result, $options);
+        
+        // Cleanup temp files
+        cleanupTempFiles($file_path);
+        
+        return $result;
+    }
+}
+
 
 // Function untuk generate QR Code URL
 function generateQRCodeURL($data) {
