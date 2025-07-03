@@ -1,9 +1,8 @@
 <?php
-session_start();
 $host = 'localhost';
 $dbname = 'tetangga.id';
-$username = 'root';
-$password = '';
+$username = 'tetangga_app';
+$password = 'Dipa190503!@#'; 
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
