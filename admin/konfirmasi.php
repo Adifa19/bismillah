@@ -344,7 +344,7 @@ $pending_payments = $stmt->fetchAll();
                                     <div class="col-md-4">
                                         <h6><i class="fas fa-image"></i> Bukti Pembayaran</h6>
                                         <?php if ($payment['bukti_pembayaran']): ?>
-                                            <img src="uploads/<?= htmlspecialchars($payment['bukti_pembayaran']) ?>" 
+                                            <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($payment['bukti_pembayaran']) ?>"
                                                  class="proof-image" alt="Bukti Pembayaran">
                                         <?php else: ?>
                                             <p class="text-muted">Tidak ada bukti pembayaran</p>
