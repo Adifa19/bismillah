@@ -1,7 +1,7 @@
 <?php
 session_start();
 $host = 'localhost';
-$dbname = 'tetangga.id';
+$dbname = 'tetangga_id';
 $username = 'tetangga_app';  // <- pastikan ini bukan 'root'
 $password = 'Dipa190503!@#'; // <- password yang Anda buat tadi
 
