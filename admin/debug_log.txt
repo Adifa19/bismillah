@@ -1,0 +1,774 @@
+== VIEW ==
+python ../ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+python: can't open file 'C:\\xampp\\htdocs\\bismillah\\ocr.py': [Errno 2] No such file or directory
+
+
+== VIEW ==
+python ../ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+python: can't open file 'C:\\xampp\\htdocs\\bismillah\\ocr.py': [Errno 2] No such file or directory
+
+
+== VIEW ==
+python ../ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+python: can't open file 'C:\\xampp\\htdocs\\bismillah\\ocr.py': [Errno 2] No such file or directory
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== KONFIRMASI ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750590702.jpeg" "TAG-4338F541" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.10 Rp 1 22 Jun 2025, 18.10 Dikirim Dari Adifa +++++ Kirim Ke Ka Rere Sumber Saldo ShopeePay Rincian Referensi Deskripsi TAG-4338F541 Order SN Bagikan Dana
+
+=== NORMALIZED OCR TEXT ===
+1810122jun20251810dikirimdariadifa+++++kirimkekareresumbersald0sh0peepayrincianreferensideskripsitag-4338f5410rdersnbagikandana
+
+Jumlah ditemukan: 20251810
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750590702.jpeg" "TAG-4338F541" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.10 Rp 1 22 Jun 2025, 18.10 Dikirim Dari Adifa +++++ Kirim Ke Ka Rere Sumber Saldo ShopeePay Rincian Referensi Deskripsi TAG-4338F541 Order SN Bagikan Dana
+
+=== NORMALIZED OCR TEXT ===
+1810122jun20251810dikirimdariadifa+++++kirimkekareresumbersald0sh0peepayrincianreferensideskripsitag-4338f5410rdersnbagikandana
+
+Jumlah ditemukan: 20251810
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== KONFIRMASI ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750590702.jpeg" "TAG-4338F541" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.10 Rp 1 22 Jun 2025, 18.10 Dikirim Dari Adifa +++++ Kirim Ke Ka Rere Sumber Saldo ShopeePay Rincian Referensi Deskripsi TAG-4338F541 Order SN Bagikan Dana
+
+=== NORMALIZED OCR TEXT ===
+1810122jun20251810dikirimdariadifa+++++kirimkekareresumbersald0sh0peepayrincianreferensideskripsitag-4338f5410rdersnbagikandana
+
+Jumlah ditemukan: 20251810
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750590702.jpeg" "TAG-4338F541" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.10 Rp 1 22 Jun 2025, 18.10 Dikirim Dari Adifa +++++ Kirim Ke Ka Rere Sumber Saldo ShopeePay Rincian Referensi Deskripsi TAG-4338F541 Order SN Bagikan Dana
+
+=== NORMALIZED OCR TEXT ===
+1810122jun20251810dikirimdariadifa+++++kirimkekareresumbersald0sh0peepayrincianreferensideskripsitag-4338f5410rdersnbagikandana
+
+Jumlah ditemukan: 20251810
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 59, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 61, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750937111.jpg" "AUTO-GENERATED" "2025-06-26"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.24 Rp 1 26 Jun 2025, 18.24 Dikirim Dari Adifa 4+4++ Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-1750935837-10 Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1824126jun20251824dikirimdariadifa4+4++kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-1750935837-10bagikan
+
+Jumlah ditemukan: 1750935837
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 64, in <module>
+    print("Kode: \u274c")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 61, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750590702.jpeg" "TAG-4338F541" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.10 Rp 1 22 Jun 2025, 18.10 Dikirim Dari Adifa +++++ Kirim Ke Ka Rere Sumber Saldo ShopeePay Rincian Referensi Deskripsi TAG-4338F541 Order SN Bagikan Dana
+
+=== NORMALIZED OCR TEXT ===
+1810122jun20251810dikirimdariadifa+++++kirimkekareresumbersald0sh0peepayrincianreferensideskripsitag-4338f5410rdersnbagikandana
+
+Jumlah ditemukan: 20251810
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 61, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750588564.jpeg" "TAG-30FF2D36" "2025-06-28"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+17.34 0 Rp 1 22 Jun 2025, 17.34 Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-30FF2D36 Order SN UWSFPI6SSNZHHKIWEDZXHNLI Salin 11LEM Bagikan
+
+=== NORMALIZED OCR TEXT ===
+17340122jun20251734kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-30ff2d360rdersnuwsfpi6ssnzhhkiwedzxhnlisalin11lembagikan
+
+Jumlah ditemukan: 17340122
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 61, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750937111.jpg" "AUTO-GENERATED" "2025-06-26"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.24 Rp 1 26 Jun 2025, 18.24 Dikirim Dari Adifa 4+4++ Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-1750935837-10 Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1824126jun20251824dikirimdariadifa4+4++kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-1750935837-10bagikan
+
+Jumlah ditemukan: 1750935837
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 64, in <module>
+    print("Kode: \u274c")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750585397.jpeg" "TAG-DE8E4147" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+16.37 Rp 1 22 Jun 2025, 16.37 Dikirim Dari Adifa ***** Kirim Ke Ka Rere Sumber Dana Saldo ShopeePay Rincian Referensi Deskripsi TAG-DE8E4147 Order SN Bagikan
+
+=== NORMALIZED OCR TEXT ===
+1637122jun20251637dikirimdariadifa*****kirimkekareresumberdanasald0sh0peepayrincianreferensideskripsitag-de8e41470rdersnbagikan
+
+Jumlah ditemukan: 20251637
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 61, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
+== VIEW ==
+python ocr.py "C:\xampp\htdocs\bismillah\uploads\bukti_1750590702.jpeg" "TAG-4338F541" "2025-06-22"
+Using CPU. Note: This module is much faster with a GPU.
+C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+=== RAW OCR TEXT ===
+18.10 Rp 1 22 Jun 2025, 18.10 Dikirim Dari Adifa +++++ Kirim Ke Ka Rere Sumber Saldo ShopeePay Rincian Referensi Deskripsi TAG-4338F541 Order SN Bagikan Dana
+
+=== NORMALIZED OCR TEXT ===
+1810122jun20251810dikirimdariadifa+++++kirimkekareresumbersald0sh0peepayrincianreferensideskripsitag-4338f5410rdersnbagikandana
+
+Jumlah ditemukan: 20251810
+
+=== VALIDASI OCR ===
+Traceback (most recent call last):
+  File "C:\xampp\htdocs\bismillah\admin\ocr.py", line 61, in <module>
+    print("Kode: \u2705")
+  File "C:\Users\Acer\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 6: character maps to <undefined>
+
+
