@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+<?php
 // Proses OCR
 if (isset($_POST['run_ocr'])) {
     $user_bill_id = (int)$_POST['user_bill_id'];
@@ -76,77 +77,125 @@ if (isset($_POST['run_ocr'])) {
     $user_bill = $stmt->fetch();
     
     if ($user_bill && $user_bill['bukti_pembayaran']) {
-        $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
+        // Fix: Use correct variable name
+        $image_path = '../warga/uploads/bukti_pembayaran/' . $user_bill['bukti_pembayaran'];
         
         if (file_exists($image_path)) {
-            // Jalankan OCR
-            $command = "python3 ocr.py " . escapeshellarg($image_path) . " " . 
-                      escapeshellarg($user_bill['kode_tagihan']) . " " . 
-                      escapeshellarg($user_bill['expected_amount']);
+            // Get absolute paths
+            $script_path = __DIR__ . '/ocr.py';
+            $absolute_image_path = realpath($image_path);
             
-            $output = shell_exec($command);
-            
-            if ($output) {
-                // Parse output OCR
-                $ocr_data = [
-                    'jumlah' => null,
-                    'tanggal' => null,
-                    'kode' => null,
-                    'confidence' => 0,
-                    'text' => ''
-                ];
+            // Check if OCR script exists
+            if (!file_exists($script_path)) {
+                $ocr_message = "OCR script tidak ditemukan di: " . $script_path;
+                $ocr_message_type = "error";
+            } else {
+                // Try different Python commands
+                $python_commands = ['python', 'python3', '/usr/bin/python3', '/usr/bin/python'];
+                $output = null;
+                $command_used = null;
                 
-                $lines = explode("\n", $output);
-                foreach ($lines as $line) {
-                    if (strpos($line, 'AMOUNT:') === 0) {
-                        $ocr_data['jumlah'] = (int)str_replace('AMOUNT:', '', $line);
-                    } elseif (strpos($line, 'DATE:') === 0) {
-                        $ocr_data['tanggal'] = str_replace('DATE:', '', $line);
-                    } elseif (strpos($line, 'CODE:') === 0) {
-                        $ocr_data['kode'] = str_replace('CODE:', '', $line);
-                    } elseif (strpos($line, 'CONFIDENCE:') === 0) {
-                        $ocr_data['confidence'] = (float)str_replace('CONFIDENCE:', '', $line);
-                    } elseif (strpos($line, 'TEXT:') === 0) {
-                        $ocr_data['text'] = str_replace('TEXT:', '', $line);
+                foreach ($python_commands as $python_cmd) {
+                    // Build command with proper escaping
+                    $command = $python_cmd . " " . escapeshellarg($script_path) . " " . 
+                              escapeshellarg($absolute_image_path) . " " . 
+                              escapeshellarg($user_bill['kode_tagihan']) . " " . 
+                              escapeshellarg($user_bill['expected_amount']) . " 2>&1";
+                    
+                    $output = shell_exec($command);
+                    
+                    if ($output && !empty(trim($output))) {
+                        $command_used = $python_cmd;
+                        break;
                     }
                 }
                 
-                // Update database dengan hasil OCR
-                $stmt = $pdo->prepare("
-                    UPDATE user_bills 
-                    SET ocr_jumlah = ?, 
-                        ocr_kode_found = ?, 
-                        ocr_date_found = ?, 
-                        ocr_confidence = ?, 
-                        ocr_details = ?
-                    WHERE id = ?
-                ");
-                
-                $kode_found = !empty($ocr_data['kode']) && 
-                             stripos($ocr_data['kode'], substr($user_bill['kode_tagihan'], 0, 6)) !== false;
-                $date_found = !empty($ocr_data['tanggal']);
-                
-                $stmt->execute([
-                    $ocr_data['jumlah'],
-                    $kode_found ? 1 : 0,
-                    $date_found ? 1 : 0,
-                    $ocr_data['confidence'],
-                    json_encode($ocr_data),
-                    $user_bill_id
-                ]);
-                
-                $ocr_message = "OCR berhasil dijalankan! Confidence: " . number_format($ocr_data['confidence'], 2) . "%";
-                $ocr_message_type = "info";
-            } else {
-                $ocr_message = "OCR gagal dijalankan. Pastikan Python dan library yang diperlukan sudah terinstall.";
-                $ocr_message_type = "error";
+                if ($output && !empty(trim($output))) {
+                    // Parse output OCR
+                    $ocr_data = [
+                        'jumlah' => null,
+                        'tanggal' => null,
+                        'kode' => null,
+                        'confidence' => 0,
+                        'text' => ''
+                    ];
+                    
+                    $lines = explode("\n", $output);
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (strpos($line, 'AMOUNT:') === 0) {
+                            $amount_str = str_replace('AMOUNT:', '', $line);
+                            $ocr_data['jumlah'] = is_numeric($amount_str) ? (int)$amount_str : null;
+                        } elseif (strpos($line, 'DATE:') === 0) {
+                            $date_str = str_replace('DATE:', '', $line);
+                            $ocr_data['tanggal'] = !empty($date_str) ? $date_str : null;
+                        } elseif (strpos($line, 'CODE:') === 0) {
+                            $code_str = str_replace('CODE:', '', $line);
+                            $ocr_data['kode'] = !empty($code_str) ? $code_str : null;
+                        } elseif (strpos($line, 'CONFIDENCE:') === 0) {
+                            $conf_str = str_replace('CONFIDENCE:', '', $line);
+                            $ocr_data['confidence'] = is_numeric($conf_str) ? (float)$conf_str : 0;
+                        } elseif (strpos($line, 'TEXT:') === 0) {
+                            $ocr_data['text'] = str_replace('TEXT:', '', $line);
+                        }
+                    }
+                    
+                    // Update database dengan hasil OCR
+                    $stmt = $pdo->prepare("
+                        UPDATE user_bills 
+                        SET ocr_jumlah = ?, 
+                            ocr_kode_found = ?, 
+                            ocr_date_found = ?, 
+                            ocr_confidence = ?, 
+                            ocr_details = ?
+                        WHERE id = ?
+                    ");
+                    
+                    // Check if code matches (partial match)
+                    $kode_found = false;
+                    if (!empty($ocr_data['kode']) && !empty($user_bill['kode_tagihan'])) {
+                        $ocr_code_clean = strtoupper(preg_replace('/[^A-Z0-9]/', '', $ocr_data['kode']));
+                        $expected_code_clean = strtoupper(preg_replace('/[^A-Z0-9]/', '', $user_bill['kode_tagihan']));
+                        
+                        // Check if OCR code contains expected code or vice versa
+                        $kode_found = (strpos($ocr_code_clean, $expected_code_clean) !== false) || 
+                                     (strpos($expected_code_clean, $ocr_code_clean) !== false);
+                    }
+                    
+                    $date_found = !empty($ocr_data['tanggal']);
+                    
+                    $stmt->execute([
+                        $ocr_data['jumlah'],
+                        $kode_found ? 1 : 0,
+                        $date_found ? 1 : 0,
+                        $ocr_data['confidence'],
+                        json_encode($ocr_data),
+                        $user_bill_id
+                    ]);
+                    
+                    $ocr_message = "OCR berhasil dijalankan dengan " . $command_used . "! Confidence: " . number_format($ocr_data['confidence'], 2) . "%";
+                    $ocr_message_type = "info";
+                } else {
+                    $ocr_message = "OCR gagal dijalankan. Output kosong. Pastikan Python dan library EasyOCR terinstall:\n" .
+                                  "pip install easyocr\n\n" .
+                                  "Debug info:\n" .
+                                  "- Script path: " . $script_path . "\n" .
+                                  "- Image path: " . $absolute_image_path . "\n" .
+                                  "- Image exists: " . (file_exists($absolute_image_path) ? 'Yes' : 'No') . "\n" .
+                                  "- Last command: " . $command;
+                    $ocr_message_type = "error";
+                }
             }
         } else {
-            $ocr_message = "File bukti pembayaran tidak ditemukan.";
+            $ocr_message = "File bukti pembayaran tidak ditemukan di: " . $image_path;
             $ocr_message_type = "error";
         }
+    } else {
+        $ocr_message = "Data user_bill tidak ditemukan atau tidak ada bukti pembayaran.";
+        $ocr_message_type = "error";
     }
 }
+?>
 
 // Ambil data pembayaran yang menunggu konfirmasi
 $stmt = $pdo->prepare("
