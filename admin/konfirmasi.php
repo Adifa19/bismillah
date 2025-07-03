@@ -1,10 +1,9 @@
 <?php
-session_start();
-require_once '../config';
+include('../config.php');
 
-// Cek apakah user adalah admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../login.php');
+// Cek apakah user sudah login dan merupakan admin
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
+    header("Location: login.php");
     exit();
 }
 
