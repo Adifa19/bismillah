@@ -76,7 +76,7 @@ if (isset($_POST['run_ocr'])) {
     $user_bill = $stmt->fetch();
     
     if ($user_bill && $user_bill['bukti_pembayaran']) {
-        $image_path = "../warga/uploads/bukti_pembayaran/" . $user_bill['bukti_pembayaran'];
+        $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
         
         if (file_exists($image_path)) {
             // Jalankan OCR
