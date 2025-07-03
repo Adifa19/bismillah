@@ -216,14 +216,44 @@ function run_ocr($file_path, $kode_tagihan = '', $jumlah_tagihan = 0) {
     $full_path = realpath($file_path);
     if (!file_exists($full_path)) {
         error_log("File tidak ditemukan: " . $file_path);
-        return array('text' => '', 'jumlah' => 0, 'tanggal' => '', 'kode' => '', 'confidence' => 0);
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0
+        );
     }
 
-    // Jalankan OCR script Python
-    $command = escapeshellcmd("python3 ocr.py " . escapeshellarg($full_path));
-    $output = shell_exec($command);
+    // Pastikan path ke ocr.py benar - sesuaikan dengan lokasi file Anda
+    $ocr_script_path = __DIR__ . '/ocr.py';
+    
+    // Periksa apakah file ocr.py ada
+    if (!file_exists($ocr_script_path)) {
+        error_log("OCR script tidak ditemukan: " . $ocr_script_path);
+        return array(
+            'text' => '', 
+            'jumlah' => 0, 
+            'tanggal' => '', 
+            'kode' => '', 
+            'confidence' => 0
+        );
+    }
+
+    // Bangun command dengan parameter yang benar
+    $command = sprintf(
+        'python3 %s %s %s %s 2>&1',
+        escapeshellarg($ocr_script_path),
+        escapeshellarg($full_path),
+        escapeshellarg($kode_tagihan),
+        escapeshellarg($jumlah_tagihan)
+    );
     
     error_log("OCR Command: " . $command);
+    
+    // Jalankan command
+    $output = shell_exec($command);
+    
     error_log("OCR Raw Output: " . $output);
     
     // Inisialisasi hasil default
@@ -236,42 +266,92 @@ function run_ocr($file_path, $kode_tagihan = '', $jumlah_tagihan = 0) {
     );
     
     if ($output) {
-        // Parse JSON output dari ocr.py
+        // Coba parse sebagai JSON
         $ocr_data = json_decode($output, true);
         
         if ($ocr_data && !isset($ocr_data['error'])) {
             $result['text'] = $ocr_data['extracted_text'] ?? '';
-            
-            // Proses jumlah
-            if (!empty($ocr_data['jumlah'])) {
-                $result['jumlah'] = normalizeAmount($ocr_data['jumlah']);
-            }
-            
-            // Proses tanggal
-            if (!empty($ocr_data['tanggal'])) {
-                $result['tanggal'] = normalizeDate($ocr_data['tanggal']);
-            }
-            
-            // Proses kode tagihan
-            if (!empty($ocr_data['kode_tagihan'])) {
-                $result['kode'] = strtoupper(trim($ocr_data['kode_tagihan']));
-            }
-            
-            // Hitung confidence berdasarkan kualitas ekstraksi
-            $confidence = 0;
-            if ($result['jumlah'] > 0) $confidence += 30;
-            if (!empty($result['tanggal'])) $confidence += 25;
-            if (!empty($result['kode'])) $confidence += 25;
-            if (!empty($result['text'])) $confidence += 20;
-            
-            $result['confidence'] = $confidence;
+            $result['jumlah'] = intval($ocr_data['jumlah'] ?? 0);
+            $result['tanggal'] = $ocr_data['tanggal'] ?? '';
+            $result['kode'] = $ocr_data['kode_tagihan'] ?? '';
+            $result['confidence'] = floatval($ocr_data['confidence'] ?? 0);
         } else {
             error_log("OCR Error: " . ($ocr_data['error'] ?? 'Unknown error'));
+            
+            // Fallback: coba parse output lama jika JSON gagal
+            if (strpos($output, 'EXTRACTED_TEXT:') !== false) {
+                $lines = explode("\n", $output);
+                foreach ($lines as $line) {
+                    if (strpos($line, 'EXTRACTED_TEXT:') === 0) {
+                        $result['text'] = trim(substr($line, 15));
+                    } elseif (strpos($line, 'AMOUNT:') === 0) {
+                        $result['jumlah'] = intval(trim(substr($line, 7)));
+                    } elseif (strpos($line, 'DATE:') === 0) {
+                        $result['tanggal'] = trim(substr($line, 5));
+                    } elseif (strpos($line, 'CODE:') === 0) {
+                        $result['kode'] = trim(substr($line, 5));
+                    } elseif (strpos($line, 'CONFIDENCE:') === 0) {
+                        $result['confidence'] = floatval(trim(substr($line, 11)));
+                    }
+                }
+            }
         }
+    } else {
+        error_log("OCR: Tidak ada output dari command");
     }
     
     error_log("OCR Result: " . json_encode($result));
     return $result;
+}
+
+// Fungsi untuk debugging OCR - tambahkan ini untuk testing
+function debug_ocr($file_path) {
+    echo "<h3>Debug OCR untuk: " . basename($file_path) . "</h3>";
+    
+    // Cek file exists
+    if (!file_exists($file_path)) {
+        echo "<p style='color: red;'>File tidak ditemukan: $file_path</p>";
+        return;
+    }
+    
+    echo "<p>✓ File ditemukan: $file_path</p>";
+    echo "<p>File size: " . filesize($file_path) . " bytes</p>";
+    
+    // Cek Python
+    $python_check = shell_exec('python3 --version 2>&1');
+    echo "<p>Python3 version: " . ($python_check ?: 'Tidak terdeteksi') . "</p>";
+    
+    // Cek EasyOCR
+    $easyocr_check = shell_exec('python3 -c "import easyocr; print(\'EasyOCR OK\')" 2>&1');
+    echo "<p>EasyOCR: " . ($easyocr_check ?: 'Tidak terinstal') . "</p>";
+    
+    // Test OCR
+    $result = run_ocr($file_path, 'TEST123', 50000);
+    echo "<h4>Hasil OCR:</h4>";
+    echo "<pre>" . json_encode($result, JSON_PRETTY_PRINT) . "</pre>";
+}
+
+// Fungsi untuk test OCR dengan file sample
+function test_ocr() {
+    echo "<h2>Test OCR Function</h2>";
+    
+    // Ambil file sample dari database
+    $stmt = $pdo->prepare("
+        SELECT bukti_pembayaran, kode_tagihan, jumlah 
+        FROM user_bills ub
+        JOIN bills b ON ub.bill_id = b.id
+        WHERE ub.bukti_pembayaran IS NOT NULL 
+        LIMIT 1
+    ");
+    $stmt->execute();
+    $sample = $stmt->fetch();
+    
+    if ($sample) {
+        $file_path = '../warga/uploads/bukti_pembayaran/' . $sample['bukti_pembayaran'];
+        debug_ocr($file_path);
+    } else {
+        echo "<p>Tidak ada sample file untuk test.</p>";
+    }
 }
 
 // Fungsi generate QR Code data
