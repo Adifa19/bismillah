@@ -154,7 +154,15 @@ def calculate_confidence(results):
 def main():
     # Validasi argumen
     if len(sys.argv) < 2:
-        print("ERROR: No image path provided")
+        result = {
+            "error": "No image path provided",
+            "extracted_text": "",
+            "jumlah": 0,
+            "tanggal": "",
+            "kode_tagihan": "",
+            "confidence": 0
+        }
+        print(json.dumps(result))
         sys.exit(1)
     
     image_path = sys.argv[1]
@@ -163,7 +171,15 @@ def main():
     
     # Validasi file
     if not os.path.exists(image_path):
-        print("ERROR: File not found")
+        result = {
+            "error": "File not found: " + image_path,
+            "extracted_text": "",
+            "jumlah": 0,
+            "tanggal": "",
+            "kode_tagihan": "",
+            "confidence": 0
+        }
+        print(json.dumps(result))
         sys.exit(1)
     
     try:
@@ -174,7 +190,15 @@ def main():
         results = reader.readtext(image_path)
         
         if not results:
-            print("ERROR: No text detected")
+            result = {
+                "error": "No text detected",
+                "extracted_text": "",
+                "jumlah": 0,
+                "tanggal": "",
+                "kode_tagihan": "",
+                "confidence": 0
+            }
+            print(json.dumps(result))
             sys.exit(1)
         
         # Gabungkan semua teks
@@ -186,21 +210,31 @@ def main():
         extracted_code = extract_code(all_text, expected_code)
         confidence = calculate_confidence(results)
         
-        # Output dalam format yang diharapkan PHP
-        print(f"EXTRACTED_TEXT: {all_text}")
-        print(f"AMOUNT: {extracted_amount}")
-        print(f"DATE: {extracted_date}")
-        print(f"CODE: {extracted_code}")
-        print(f"CONFIDENCE: {confidence}")
+        # Output dalam format JSON
+        result = {
+            "extracted_text": all_text,
+            "jumlah": extracted_amount,
+            "tanggal": extracted_date,
+            "kode_tagihan": extracted_code,
+            "confidence": confidence,
+            "expected_amount": expected_amount,
+            "expected_code": expected_code,
+            "amount_match": extracted_amount == expected_amount if expected_amount > 0 else False,
+            "code_match": extracted_code.upper() == expected_code.upper() if expected_code else False
+        }
         
-        # Debug info (akan diabaikan PHP jika tidak diperlukan)
-        print(f"DEBUG_EXPECTED_AMOUNT: {expected_amount}")
-        print(f"DEBUG_EXPECTED_CODE: {expected_code}")
-        print(f"DEBUG_AMOUNT_MATCH: {extracted_amount == expected_amount}")
-        print(f"DEBUG_CODE_MATCH: {extracted_code.upper() == expected_code.upper() if expected_code else 'No expected code'}")
+        print(json.dumps(result))
         
     except Exception as e:
-        print(f"ERROR: {str(e)}")
+        result = {
+            "error": str(e),
+            "extracted_text": "",
+            "jumlah": 0,
+            "tanggal": "",
+            "kode_tagihan": "",
+            "confidence": 0
+        }
+        print(json.dumps(result))
         sys.exit(1)
 
 if __name__ == "__main__":
