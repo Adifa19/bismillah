@@ -71,14 +71,17 @@ if (isset($_GET['ocr']) && $_GET['id']) {
     $result = $stmt->fetch();
     
     if ($result && $result['bukti_pembayaran']) {
-        $imagePath = __DIR__ . '../warga/uploads/bukti_pembayaran/' . $result['bukti_pembayaran'];
+        // FIX: Add missing slash between __DIR__ and '../warga/uploads/bukti_pembayaran/'
+        $imagePath = __DIR__ . '/../warga/uploads/bukti_pembayaran/' . $result['bukti_pembayaran'];
         
         if (file_exists($imagePath)) {
             $ocrResult = runOCR($imagePath, $user_bill_id);
             $_SESSION['ocr_result'] = $ocrResult;
         } else {
-            $_SESSION['error'] = 'File bukti pembayaran tidak ditemukan';
+            $_SESSION['error'] = 'File bukti pembayaran tidak ditemukan: ' . $imagePath;
         }
+    } else {
+        $_SESSION['error'] = 'Data bukti pembayaran tidak ditemukan di database';
     }
     
     header('Location: konfirmasi.php');
@@ -291,7 +294,6 @@ $pending_payments = $stmt->fetchAll();
                                                         <i class="fas fa-robot"></i> Jalankan OCR
                                                     </a>
                                                     <button type="button" 
-                                                            <button type="button" 
                                                             class="btn btn-success btn-sm" 
                                                             onclick="confirmPayment(<?= $payment['id'] ?>, 'konfirmasi')">
                                                         <i class="fas fa-check"></i> Konfirmasi
