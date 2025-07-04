@@ -11,10 +11,10 @@ import numpy as np
 
 # Konfigurasi database
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'tetangga.id'
+$host = 'localhost';
+$dbname = 'tetangga_id';
+$username = 'root';
+$password = 'Dipa190503!@#';
 }
 
 # Konfigurasi path Tesseract (sesuaikan dengan instalasi)
