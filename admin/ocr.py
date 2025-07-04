@@ -9,12 +9,12 @@ import sys
 from PIL import Image
 import numpy as np
 
-# Konfigurasi database
+# Konfigurasi database - Fixed syntax
 DB_CONFIG = {
-$host = 'localhost';
-$dbname = 'tetangga_id';
-$username = 'root';
-$password = 'Dipa190503!@#';
+    'host': 'localhost',
+    'database': 'tetangga_id',
+    'user': 'root',
+    'password': 'Dipa190503!@#'
 }
 
 # Konfigurasi path Tesseract (sesuaikan dengan instalasi)
@@ -36,31 +36,37 @@ class OCRProcessor:
     
     def preprocess_image(self, image_path):
         """Preprocessing image untuk meningkatkan akurasi OCR"""
-        # Baca gambar
-        image = cv2.imread(image_path)
-        if image is None:
-            raise ValueError(f"Could not read image: {image_path}")
-        
-        # Convert ke grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # Noise reduction
-        denoised = cv2.medianBlur(gray, 3)
-        
-        # Contrast enhancement
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        enhanced = clahe.apply(denoised)
-        
-        # Thresholding
-        _, thresh = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        return thresh
+        try:
+            # Baca gambar
+            image = cv2.imread(image_path)
+            if image is None:
+                raise ValueError(f"Could not read image: {image_path}")
+            
+            # Convert ke grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            
+            # Noise reduction
+            denoised = cv2.medianBlur(gray, 3)
+            
+            # Contrast enhancement
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            enhanced = clahe.apply(denoised)
+            
+            # Thresholding
+            _, thresh = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            
+            return thresh
+        except Exception as e:
+            print(f"Image preprocessing error: {e}")
+            return None
     
     def extract_text_from_image(self, image_path):
         """Ekstrak teks dari gambar menggunakan OCR"""
         try:
             # Preprocessing
             processed_image = self.preprocess_image(image_path)
+            if processed_image is None:
+                return "", 0
             
             # OCR dengan konfigurasi khusus
             custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,/-: '
@@ -262,10 +268,12 @@ class OCRProcessor:
                 FROM user_bills 
                 WHERE status = 'menunggu_konfirmasi' 
                 AND bukti_pembayaran IS NOT NULL 
-                AND ocr_confidence = 0.00
+                AND (ocr_confidence = 0.00 OR ocr_confidence IS NULL)
             """
             cursor.execute(query)
             pending_uploads = cursor.fetchall()
+            
+            print(f"Found {len(pending_uploads)} pending uploads to process")
             
             for upload in pending_uploads:
                 user_bill_id = upload[0]
@@ -298,18 +306,24 @@ def main():
         return
     
     command = sys.argv[1]
-    ocr_processor = OCRProcessor()
     
-    if command == "process_single" and len(sys.argv) == 4:
-        user_bill_id = int(sys.argv[2])
-        image_path = sys.argv[3]
-        ocr_processor.process_payment_proof(user_bill_id, image_path)
-    
-    elif command == "process_pending":
-        ocr_processor.process_pending_uploads()
-    
-    else:
-        print("Invalid command or arguments")
+    try:
+        ocr_processor = OCRProcessor()
+        
+        if command == "process_single" and len(sys.argv) == 4:
+            user_bill_id = int(sys.argv[2])
+            image_path = sys.argv[3]
+            ocr_processor.process_payment_proof(user_bill_id, image_path)
+        
+        elif command == "process_pending":
+            ocr_processor.process_pending_uploads()
+        
+        else:
+            print("Invalid command or arguments")
+            
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
