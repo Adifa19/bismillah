@@ -1,379 +1,315 @@
-import easyocr
 import cv2
-import numpy as np
+import pytesseract
 import re
+import mysql.connector
 from datetime import datetime
 import json
-import sys
 import os
-from pathlib import Path
-import mysql.connector
-from mysql.connector import Error
-import argparse
+import sys
+from PIL import Image
+import numpy as np
 
-class BuktiTransferOCR:
-    def __init__(self, db_config=None):
-        """
-        Initialize OCR reader dan database connection
-        """
-        self.reader = easyocr.Reader(['en', 'id'])  # English dan Indonesian
-        self.db_config = db_config or {
-            'host': 'localhost',
-            'database': 'tetangga.id',
-            'user': 'root',
-            'password': ''
-        }
-        self.connection = None
-        self.connect_database()
-        
-    def connect_database(self):
-        """Connect ke database MySQL"""
+# Konfigurasi database
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '',
+    'database': 'tetangga.id'
+}
+
+# Konfigurasi path Tesseract (sesuaikan dengan instalasi)
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+class OCRProcessor:
+    def __init__(self):
+        self.db = None
+        self.connect_db()
+    
+    def connect_db(self):
+        """Koneksi ke database"""
         try:
-            self.connection = mysql.connector.connect(**self.db_config)
-            if self.connection.is_connected():
-                print("Database connection successful")
-        except Error as e:
-            print(f"Error connecting to database: {e}")
-            self.connection = None
+            self.db = mysql.connector.connect(**DB_CONFIG)
+            print("Database connection established")
+        except mysql.connector.Error as err:
+            print(f"Database connection failed: {err}")
+            sys.exit(1)
     
     def preprocess_image(self, image_path):
-        """
-        Preprocessing gambar untuk meningkatkan akurasi OCR
-        """
-        try:
-            # Baca gambar
-            image = cv2.imread(image_path)
-            if image is None:
-                raise ValueError(f"Cannot read image: {image_path}")
-            
-            # Convert ke grayscale
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # Apply gaussian blur untuk mengurangi noise
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-            
-            # Threshold untuk meningkatkan kontras
-            _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            
-            # Morphological operations untuk membersihkan noise
-            kernel = np.ones((1, 1), np.uint8)
-            cleaned = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-            
-            return cleaned
-            
-        except Exception as e:
-            print(f"Error preprocessing image: {e}")
-            return None
+        """Preprocessing image untuk meningkatkan akurasi OCR"""
+        # Baca gambar
+        image = cv2.imread(image_path)
+        if image is None:
+            raise ValueError(f"Could not read image: {image_path}")
+        
+        # Convert ke grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Noise reduction
+        denoised = cv2.medianBlur(gray, 3)
+        
+        # Contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(denoised)
+        
+        # Thresholding
+        _, thresh = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        return thresh
     
     def extract_text_from_image(self, image_path):
-        """
-        Ekstrak teks dari gambar menggunakan EasyOCR
-        """
+        """Ekstrak teks dari gambar menggunakan OCR"""
         try:
-            # Preprocess gambar
+            # Preprocessing
             processed_image = self.preprocess_image(image_path)
             
-            if processed_image is None:
-                # Fallback ke gambar asli
-                processed_image = image_path
+            # OCR dengan konfigurasi khusus
+            custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,/-: '
+            text = pytesseract.image_to_string(processed_image, config=custom_config)
             
-            # OCR extraction
-            results = self.reader.readtext(processed_image, detail=1)
+            # OCR dengan confidence score
+            data = pytesseract.image_to_data(processed_image, output_type=pytesseract.Output.DICT)
+            confidences = [int(conf) for conf in data['conf'] if int(conf) > 0]
+            avg_confidence = sum(confidences) / len(confidences) if confidences else 0
             
-            # Extract text dan confidence
-            extracted_data = []
-            for (bbox, text, confidence) in results:
-                if confidence > 0.5:  # Filter low confidence results
-                    extracted_data.append({
-                        'text': text.strip(),
-                        'confidence': confidence,
-                        'bbox': bbox
-                    })
-            
-            return extracted_data
+            return text, avg_confidence
             
         except Exception as e:
-            print(f"Error extracting text: {e}")
-            return []
+            print(f"OCR Error: {e}")
+            return "", 0
     
-    def find_nominal_amount(self, text_data):
-        """
-        Cari nominal transfer dalam teks
-        """
-        nominal_patterns = [
-            r'(?:rp\.?\s*|idr\s*)?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',  # Format rupiah
-            r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*(?:rp|idr)?',  # Angka + mata uang
-            r'(?:nominal|jumlah|amount)[:\s]*(?:rp\.?\s*)?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',  # Label + nominal
-            r'(?:transfer|kirim|bayar)[:\s]*(?:rp\.?\s*)?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)'  # Action + nominal
+    def extract_nominal(self, text):
+        """Ekstrak nominal dari teks"""
+        # Pattern untuk nominal (Rp, angka dengan titik/koma)
+        patterns = [
+            r'Rp\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
+            r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*(?:Rp|rupiah)',
+            r'(?:jumlah|nominal|total)\s*:?\s*Rp?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)',
+            r'(\d{1,3}(?:[.,]\d{3})+)(?!\d)',  # Angka dengan pemisah ribuan
         ]
         
-        found_amounts = []
-        
-        for item in text_data:
-            text = item['text'].lower()
-            confidence = item['confidence']
-            
-            for pattern in nominal_patterns:
-                matches = re.finditer(pattern, text, re.IGNORECASE)
+        for pattern in patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            if matches:
+                # Ambil nominal terbesar (biasanya yang paling relevan)
+                nominals = []
                 for match in matches:
-                    amount_str = match.group(1)
-                    # Bersihkan format dan convert ke integer
-                    amount_clean = re.sub(r'[.,]', '', amount_str)
-                    if amount_clean.isdigit():
-                        amount = int(amount_clean)
-                        # Filter nominal yang masuk akal (min 1000, max 100juta)
-                        if 1000 <= amount <= 100000000:
-                            found_amounts.append({
-                                'amount': amount,
-                                'original_text': amount_str,
-                                'confidence': confidence,
-                                'full_text': item['text']
-                            })
+                    # Bersihkan dan konversi ke integer
+                    clean_number = re.sub(r'[.,]', '', match)
+                    if clean_number.isdigit():
+                        nominals.append(int(clean_number))
+                
+                if nominals:
+                    return max(nominals)  # Return nominal terbesar
         
-        # Return nominal dengan confidence tertinggi
-        if found_amounts:
-            return max(found_amounts, key=lambda x: x['confidence'])
         return None
     
-    def find_transaction_date(self, text_data):
-        """
-        Cari tanggal transaksi dalam teks
-        """
-        date_patterns = [
-            r'(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})',  # DD/MM/YYYY or DD-MM-YYYY
-            r'(\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{2,4})',  # DD MMM YYYY
-            r'(\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+\d{2,4})',  # Indonesian months
-            r'(\d{4}[/\-\.]\d{1,2}[/\-\.]\d{1,2})',  # YYYY/MM/DD
+    def extract_date(self, text):
+        """Ekstrak tanggal dari teks"""
+        # Pattern untuk berbagai format tanggal
+        patterns = [
+            r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})',  # DD/MM/YYYY atau DD-MM-YYYY
+            r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})',  # YYYY/MM/DD atau YYYY-MM-DD
+            r'(\d{1,2})\s+(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Aug|Sep|Okt|Nov|Des)\s+(\d{4})',  # DD Month YYYY
+            r'(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Aug|Sep|Okt|Nov|Des)\s+(\d{1,2}),?\s+(\d{4})',  # Month DD, YYYY
         ]
         
-        found_dates = []
-        
-        for item in text_data:
-            text = item['text'].lower()
-            confidence = item['confidence']
-            
-            for pattern in date_patterns:
-                matches = re.finditer(pattern, text, re.IGNORECASE)
-                for match in matches:
-                    date_str = match.group(1)
-                    parsed_date = self.parse_date(date_str)
-                    if parsed_date:
-                        found_dates.append({
-                            'date': parsed_date,
-                            'original_text': date_str,
-                            'confidence': confidence,
-                            'full_text': item['text']
-                        })
-        
-        # Return tanggal dengan confidence tertinggi
-        if found_dates:
-            return max(found_dates, key=lambda x: x['confidence'])
-        return None
-    
-    def parse_date(self, date_str):
-        """
-        Parse string tanggal ke format datetime
-        """
-        date_formats = [
-            '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y',
-            '%d/%m/%y', '%d-%m-%y', '%d.%m.%y',
-            '%Y/%m/%d', '%Y-%m-%d', '%Y.%m.%d',
-            '%d %b %Y', '%d %B %Y'
-        ]
-        
-        # Indonesian month mapping
-        month_mapping = {
-            'januari': 'january', 'februari': 'february', 'maret': 'march',
-            'april': 'april', 'mei': 'may', 'juni': 'june',
-            'juli': 'july', 'agustus': 'august', 'september': 'september',
-            'oktober': 'october', 'november': 'november', 'desember': 'december'
+        month_map = {
+            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+            'Mei': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+            'Sep': '09', 'Okt': '10', 'Nov': '11', 'Des': '12'
         }
         
-        # Replace Indonesian months with English
-        date_str_en = date_str.lower()
-        for indo, eng in month_mapping.items():
-            date_str_en = date_str_en.replace(indo, eng)
-        
-        for fmt in date_formats:
-            try:
-                return datetime.strptime(date_str_en, fmt).date()
-            except ValueError:
-                continue
-        
-        return None
-    
-    def find_billing_code(self, text_data, expected_code=None):
-        """
-        Cari kode tagihan dalam teks
-        """
-        # Pattern untuk kode tagihan
-        code_patterns = [
-            r'(?:kode|code|ref|reference)[:\s]*([A-Z0-9]{6,20})',  # Label + kode
-            r'([A-Z0-9]{8,15})',  # Kode standalone
-            r'(?:tagihan|bill)[:\s]*([A-Z0-9]{6,20})',  # Bill code
-        ]
-        
-        found_codes = []
-        
-        for item in text_data:
-            text = item['text'].upper()
-            confidence = item['confidence']
-            
-            for pattern in code_patterns:
-                matches = re.finditer(pattern, text, re.IGNORECASE)
+        for pattern in patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            if matches:
                 for match in matches:
-                    code = match.group(1).upper()
-                    found_codes.append({
-                        'code': code,
-                        'confidence': confidence,
-                        'full_text': item['text']
-                    })
+                    try:
+                        if len(match) == 3:
+                            if match[1] in month_map:  # DD Month YYYY
+                                day, month, year = match[0], month_map[match[1]], match[2]
+                            elif match[0] in month_map:  # Month DD YYYY
+                                day, month, year = match[1], month_map[match[0]], match[2]
+                            else:
+                                # Numeric format
+                                if len(match[0]) == 4:  # YYYY-MM-DD
+                                    year, month, day = match[0], match[1], match[2]
+                                else:  # DD-MM-YYYY
+                                    day, month, year = match[0], match[1], match[2]
+                            
+                            # Validasi dan format
+                            day = day.zfill(2)
+                            month = month.zfill(2)
+                            
+                            # Validasi tanggal
+                            date_str = f"{year}-{month}-{day}"
+                            datetime.strptime(date_str, '%Y-%m-%d')
+                            return date_str
+                            
+                    except ValueError:
+                        continue
         
-        # Jika ada expected_code, cari yang paling mirip
-        if expected_code and found_codes:
-            for code_data in found_codes:
-                if expected_code.upper() in code_data['code'] or code_data['code'] in expected_code.upper():
-                    return code_data
-        
-        # Return kode dengan confidence tertinggi
-        if found_codes:
-            return max(found_codes, key=lambda x: x['confidence'])
         return None
     
-    def get_bill_info(self, user_bill_id):
-        """
-        Get informasi tagihan dari database
-        """
-        if not self.connection:
-            return None
-            
+    def extract_kode_tagihan(self, text, kode_tagihan):
+        """Cek apakah kode tagihan ada dalam teks"""
+        # Bersihkan teks dan kode tagihan
+        text_clean = re.sub(r'[^a-zA-Z0-9]', '', text.upper())
+        kode_clean = re.sub(r'[^a-zA-Z0-9]', '', kode_tagihan.upper())
+        
+        # Cek apakah kode tagihan ada dalam teks
+        if kode_clean in text_clean:
+            return True
+        
+        # Cek dengan toleransi 1-2 karakter berbeda
+        if len(kode_clean) > 5:
+            for i in range(len(text_clean) - len(kode_clean) + 1):
+                substr = text_clean[i:i+len(kode_clean)]
+                diff = sum(c1 != c2 for c1, c2 in zip(kode_clean, substr))
+                if diff <= 2:  # Toleransi 2 karakter berbeda
+                    return True
+        
+        return False
+    
+    def process_payment_proof(self, user_bill_id, image_path):
+        """Proses bukti pembayaran dengan OCR"""
         try:
-            cursor = self.connection.cursor()
+            # Ekstrak teks dari gambar
+            text, confidence = self.extract_text_from_image(image_path)
+            
+            if not text.strip():
+                print("No text extracted from image")
+                return False
+            
+            # Ambil data tagihan dari database
+            cursor = self.db.cursor()
             query = """
-            SELECT ub.*, b.kode_tagihan, b.jumlah as jumlah_tagihan, b.tanggal as tanggal_tagihan
-            FROM user_bills ub
-            JOIN bills b ON ub.bill_id = b.id
-            WHERE ub.id = %s
+                SELECT ub.*, b.kode_tagihan, b.jumlah, b.tanggal 
+                FROM user_bills ub 
+                JOIN bills b ON ub.bill_id = b.id 
+                WHERE ub.id = %s
             """
             cursor.execute(query, (user_bill_id,))
-            result = cursor.fetchone()
-            cursor.close()
-            return result
-        except Error as e:
-            print(f"Database error: {e}")
-            return None
-    
-    def update_ocr_results(self, user_bill_id, ocr_results):
-        """
-        Update hasil OCR ke database
-        """
-        if not self.connection:
-            return False
+            bill_data = cursor.fetchone()
             
-        try:
-            cursor = self.connection.cursor()
-            query = """
-            UPDATE user_bills SET
-                ocr_jumlah = %s,
-                ocr_kode_found = %s,
-                ocr_date_found = %s,
-                ocr_confidence = %s,
-                ocr_details = %s
-            WHERE id = %s
+            if not bill_data:
+                print(f"Bill data not found for user_bill_id: {user_bill_id}")
+                return False
+            
+            # Ekstrak informasi dari OCR
+            ocr_nominal = self.extract_nominal(text)
+            ocr_date = self.extract_date(text)
+            ocr_kode_found = self.extract_kode_tagihan(text, bill_data[10])  # kode_tagihan
+            
+            # Hitung confidence berdasarkan hasil ekstraksi
+            extraction_confidence = confidence
+            if ocr_nominal and ocr_nominal == bill_data[11]:  # jumlah
+                extraction_confidence += 20
+            if ocr_kode_found:
+                extraction_confidence += 30
+            if ocr_date:
+                extraction_confidence += 25
+            
+            extraction_confidence = min(extraction_confidence, 100)
+            
+            # Simpan hasil OCR ke database
+            ocr_details = {
+                'extracted_text': text[:1000],  # Batasi panjang teks
+                'extracted_nominal': ocr_nominal,
+                'extracted_date': ocr_date,
+                'expected_nominal': bill_data[11],
+                'expected_kode': bill_data[10],
+                'processing_time': datetime.now().isoformat()
+            }
+            
+            update_query = """
+                UPDATE user_bills 
+                SET ocr_jumlah = %s, 
+                    ocr_kode_found = %s, 
+                    ocr_date_found = %s, 
+                    ocr_confidence = %s,
+                    ocr_details = %s
+                WHERE id = %s
             """
             
-            cursor.execute(query, (
-                ocr_results.get('nominal', {}).get('amount'),
-                1 if ocr_results.get('kode_found') else 0,
-                1 if ocr_results.get('date_found') else 0,
-                ocr_results.get('avg_confidence', 0),
-                json.dumps(ocr_results, ensure_ascii=False),
+            cursor.execute(update_query, (
+                ocr_nominal,
+                1 if ocr_kode_found else 0,
+                1 if ocr_date else 0,
+                extraction_confidence,
+                json.dumps(ocr_details),
                 user_bill_id
             ))
             
-            self.connection.commit()
+            self.db.commit()
             cursor.close()
+            
+            print(f"OCR processing completed for user_bill_id: {user_bill_id}")
+            print(f"Extracted - Nominal: {ocr_nominal}, Date: {ocr_date}, Kode Found: {ocr_kode_found}")
+            print(f"Confidence: {extraction_confidence:.2f}%")
+            
             return True
             
-        except Error as e:
-            print(f"Database error: {e}")
+        except Exception as e:
+            print(f"Error processing payment proof: {e}")
             return False
     
-    def process_bukti_transfer(self, image_path, user_bill_id):
-        """
-        Process bukti transfer lengkap
-        """
-        # Get bill info
-        bill_info = self.get_bill_info(user_bill_id)
-        if not bill_info:
-            return {'error': 'Bill not found'}
-        
-        # Extract text from image
-        text_data = self.extract_text_from_image(image_path)
-        if not text_data:
-            return {'error': 'Failed to extract text from image'}
-        
-        # Find nominal
-        nominal_result = self.find_nominal_amount(text_data)
-        
-        # Find date
-        date_result = self.find_transaction_date(text_data)
-        
-        # Find billing code
-        expected_code = bill_info.get('kode_tagihan') if bill_info else None
-        code_result = self.find_billing_code(text_data, expected_code)
-        
-        # Calculate confidence
-        confidences = [item['confidence'] for item in text_data]
-        avg_confidence = sum(confidences) / len(confidences) if confidences else 0
-        
-        # Prepare results
-        results = {
-            'user_bill_id': user_bill_id,
-            'nominal': nominal_result,
-            'tanggal': date_result,
-            'kode_tagihan': code_result,
-            'expected_amount': bill_info.get('jumlah_tagihan') if bill_info else None,
-            'expected_code': expected_code,
-            'kode_found': code_result is not None,
-            'date_found': date_result is not None,
-            'nominal_match': False,
-            'avg_confidence': round(avg_confidence, 2),
-            'all_text': [item['text'] for item in text_data]
-        }
-        
-        # Check nominal match
-        if nominal_result and bill_info:
-            expected_amount = bill_info.get('jumlah_tagihan')
-            if expected_amount:
-                results['nominal_match'] = abs(nominal_result['amount'] - expected_amount) <= 1000
-        
-        # Update database
-        self.update_ocr_results(user_bill_id, results)
-        
-        return results
+    def process_pending_uploads(self):
+        """Proses semua upload yang belum diproses OCR"""
+        try:
+            cursor = self.db.cursor()
+            query = """
+                SELECT id, bukti_pembayaran 
+                FROM user_bills 
+                WHERE status = 'menunggu_konfirmasi' 
+                AND bukti_pembayaran IS NOT NULL 
+                AND ocr_confidence = 0.00
+            """
+            cursor.execute(query)
+            pending_uploads = cursor.fetchall()
+            
+            for upload in pending_uploads:
+                user_bill_id = upload[0]
+                image_filename = upload[1]
+                image_path = f"../warga/uploads/bukti_pembayaran/{image_filename}"
+                
+                if os.path.exists(image_path):
+                    print(f"Processing: {image_path}")
+                    self.process_payment_proof(user_bill_id, image_path)
+                else:
+                    print(f"Image not found: {image_path}")
+            
+            cursor.close()
+            
+        except Exception as e:
+            print(f"Error processing pending uploads: {e}")
+    
+    def __del__(self):
+        """Destruktor untuk menutup koneksi database"""
+        if self.db:
+            self.db.close()
 
 def main():
-    parser = argparse.ArgumentParser(description='OCR Bukti Transfer')
-    parser.add_argument('image_path', help='Path to image file')
-    parser.add_argument('user_bill_id', type=int, help='User bill ID')
-    parser.add_argument('--output', '-o', help='Output JSON file')
+    """Fungsi utama"""
+    if len(sys.argv) < 2:
+        print("Usage: python ocr.py <command> [arguments]")
+        print("Commands:")
+        print("  process_single <user_bill_id> <image_path>")
+        print("  process_pending")
+        return
     
-    args = parser.parse_args()
+    command = sys.argv[1]
+    ocr_processor = OCRProcessor()
     
-    # Initialize OCR
-    ocr = BuktiTransferOCR()
+    if command == "process_single" and len(sys.argv) == 4:
+        user_bill_id = int(sys.argv[2])
+        image_path = sys.argv[3]
+        ocr_processor.process_payment_proof(user_bill_id, image_path)
     
-    # Process image
-    results = ocr.process_bukti_transfer(args.image_path, args.user_bill_id)
+    elif command == "process_pending":
+        ocr_processor.process_pending_uploads()
     
-    # Output results
-    if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(results, f, ensure_ascii=False, indent=2, default=str)
-        print(f"Results saved to {args.output}")
     else:
-        print(json.dumps(results, ensure_ascii=False, indent=2, default=str))
+        print("Invalid command or arguments")
 
 if __name__ == "__main__":
     main()
