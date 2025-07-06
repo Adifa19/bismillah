@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($
     exit;
 }
 
-// Ambil ulang data tagihan setelah OCR dijalankan
+// Ambil ulang data tagihan
 $stmt = $pdo->query("
     SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username
     FROM user_bills ub
@@ -109,12 +109,13 @@ $bills = $stmt->fetchAll();
                             <small style="font-size: 0.8em; color: #555;">
                                 <?= nl2br(htmlspecialchars($ocr_details['extracted_text'] ?? '')) ?>
                             </small>
-                        <?php else: ?>
-                            <form method="POST" style="margin:0;">
-                                <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                                <button name="run_ocr" class="btn btn-sm btn-warning">Jalankan OCR</button>
-                            </form>
+                            <hr>
                         <?php endif; ?>
+                        <!-- Tombol selalu muncul -->
+                        <form method="POST" style="margin:0;">
+                            <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                            <button name="run_ocr" class="btn btn-sm btn-warning">Jalankan OCR</button>
+                        </form>
                     </td>
                     <td>
                         <form method="POST" action="proses_konfirmasi.php">
