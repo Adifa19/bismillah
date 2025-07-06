@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
 
     if ($bill && $bill['bukti_pembayaran']) {
         $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
-        $command = escapeshellcmd("python3 ocr.py " . escapeshellarg($image_path));
+       $command = escapeshellcmd("python3 ./ocr.py " . escapeshellarg($image_path));
         $output = shell_exec($command);
 
         if ($output) {
