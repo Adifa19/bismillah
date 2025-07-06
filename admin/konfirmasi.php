@@ -670,7 +670,7 @@ function checkOCRMatch($bill) {
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <form method="POST" action="proses_konfirmasi.php">
+                                            <form method="POST" action="konfirmasi.php">
                                                 <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
                                                 <select name="status" class="form-select form-select-sm mb-2">
                                                     <?php if ($is_suitable): ?>
