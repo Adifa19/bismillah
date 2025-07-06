@@ -2,6 +2,24 @@
 require_once '../config.php';
 requireAdmin();
 
+// Fungsi untuk format tanggal Indonesia
+function format_tanggal_indo($tanggal) {
+    if (empty($tanggal)) return '-';
+    
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    $timestamp = strtotime($tanggal);
+    if ($timestamp === false) return $tanggal;
+    
+    $hari = date('d', $timestamp);
+    $bulan_num = date('n', $timestamp);
+    $tahun = date('Y', $timestamp);
+    
+    return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
+}
 // Jalankan OCR untuk semua tagihan menunggu konfirmasi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_all_ocr'])) {
     $stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah FROM user_bills ub JOIN bills b ON ub.bill_id = b.id WHERE ub.status = 'menunggu_konfirmasi' AND ub.bukti_pembayaran IS NOT NULL AND ub.ocr_details IS NULL");
@@ -109,15 +127,15 @@ $stats = [
 ];
 
 // Ambil tagihan menunggu konfirmasi dengan semua data yang diperlukan
-$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username,
+$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tanggal as tenggat_waktu, u.username,
     CASE 
         WHEN ub.tanggal_upload IS NULL THEN 'Belum Upload'
-        WHEN ub.tanggal_upload <= b.tenggat_waktu THEN 'Tepat Waktu'
+        WHEN ub.tanggal_upload <= b.tanggal THEN 'Tepat Waktu'
         ELSE 'Terlambat'
     END as status_ketepatan,
     CASE 
         WHEN ub.tanggal_upload IS NULL THEN NULL
-        ELSE DATEDIFF(ub.tanggal_upload, b.tenggat_waktu)
+        ELSE DATEDIFF(ub.tanggal_upload, b.tanggal)
     END as selisih_hari
     FROM user_bills ub
     JOIN bills b ON ub.bill_id = b.id
@@ -166,489 +184,525 @@ function checkOCRMatch($bill) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-soft: #6c7b7f;
-            --primary-light: #8fa3a7;
-            --success-soft: #7fb069;
-            --success-light: #9bc53d;
-            --warning-soft: #d4a574;
-            --warning-light: #f4c2a1;
-            --danger-soft: #c97064;
-            --danger-light: #e8998d;
-            --info-soft: #5d737e;
-            --info-light: #8fa3a7;
-            --bg-soft: #f8f9fa;
-            --text-soft: #495057;
-            --border-soft: #dee2e6;
-        }
-
         body {
-            background-color: var(--bg-soft);
-            color: var(--text-soft);
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
+        
         .navbar-brand {
-            font-weight: 600;
-            color: var(--primary-soft) !important;
+            font-weight: bold;
+            color: #2c3e50 !important;
+        }
+        
+        /* Layout Container */
+        .layout-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        
+        /* Full Width Content */
+        .full-width-content {
+            width: 100%;
+            margin: 0;
+            padding: 0 2rem;
+        }
+        
+        /* Page Header */
+        .page-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #581c87 100%);
+            color: white;
+            padding: 2rem;
+            margin: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .navbar {
-            border-bottom: 1px solid var(--border-soft);
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .nav-link {
-            color: var(--text-soft) !important;
-            transition: all 0.3s ease;
+        .page-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+            margin-bottom: 0;
         }
 
-        .nav-link:hover {
-            color: var(--primary-soft) !important;
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 0 2rem;
+            display: flex;
+            gap: 0;
+            margin: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .nav-link.active {
-            color: var(--primary-soft) !important;
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: #64748b;
             font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tab:hover {
+            color: #4f46e5;
+            background: #f1f5f9;
+            text-decoration: none;
+        }
+
+        .nav-tab.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+            background: #f1f5f9;
+        }
+        
+        /* Statistics Grid */
+        .stats-grid {
+            display: grid;         
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
         }
 
         .stat-card {
+            background: white;
+            padding: 2rem;
             border-radius: 16px;
-            border: 1px solid var(--border-soft);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.pending {
+            border-left: 4px solid #4f46e5;
+        }
+
+        .stat-card.ocr {
+            border-left: 4px solid #10b981;
+        }
+
+        .stat-card.nominal {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* OCR Action Card */
+        .ocr-action-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            margin: 2rem 0;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .btn-ocr {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-ocr:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
         }
 
-        .stat-icon {
-            font-size: 2.2rem;
-            opacity: 0.7;
-        }
-
+        /* Table Container */
         .table-container {
             background: white;
             border-radius: 16px;
-            border: 1px solid var(--border-soft);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
             overflow: hidden;
+            margin: 2rem 0;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            color: #374151;
+            padding: 1rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .table tbody td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8fafc;
         }
 
         .status-badge {
             font-size: 0.75rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
             font-weight: 500;
-        }
-
-        .btn-ocr {
-            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light));
-            border: none;
-            color: white;
-            border-radius: 12px;
-            padding: 12px 28px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(108, 123, 127, 0.2);
-        }
-
-        .btn-ocr:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(108, 123, 127, 0.3);
-            color: white;
-        }
-
-        .bg-gradient-primary {
-            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light));
-        }
-
-        .bg-gradient-success {
-            background: linear-gradient(135deg, var(--success-soft), var(--success-light));
-        }
-
-        .bg-gradient-warning {
-            background: linear-gradient(135deg, var(--warning-soft), var(--warning-light));
-        }
-
-        .page-header {
-            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light));
-            color: white;
-            padding: 3rem 0;
-            margin-bottom: 2rem;
         }
 
         .proof-image {
-            border-radius: 12px;
+            border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid var(--border-soft);
+            transition: transform 0.2s;
         }
 
         .proof-image:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        }
-
-        .card {
-            border: 1px solid var(--border-soft);
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .table-dark {
-            background-color: var(--primary-soft) !important;
-            border-color: var(--primary-soft) !important;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(108, 123, 127, 0.05);
-        }
-
-        .alert {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .alert-success {
-            background: linear-gradient(135deg, var(--success-soft), var(--success-light));
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success-soft), var(--success-light));
-            border: none;
-            border-radius: 8px;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning-soft), var(--warning-light));
-            border: none;
-            border-radius: 8px;
-            color: white;
-        }
-
-        .btn-outline-primary {
-            border-color: var(--primary-soft);
-            color: var(--primary-soft);
-            border-radius: 8px;
-        }
-
-        .btn-outline-primary:hover {
-            background-color: var(--primary-soft);
-            border-color: var(--primary-soft);
-        }
-
-        .badge {
-            border-radius: 8px;
-        }
-
-        .bg-secondary {
-            background-color: var(--info-soft) !important;
-        }
-
-        .bg-success {
-            background-color: var(--success-soft) !important;
-        }
-
-        .bg-warning {
-            background-color: var(--warning-soft) !important;
-        }
-
-        .bg-danger {
-            background-color: var(--danger-soft) !important;
-        }
-
-        .text-success {
-            color: var(--success-soft) !important;
-        }
-
-        .text-warning {
-            color: var(--warning-soft) !important;
-        }
-
-        .text-danger {
-            color: var(--danger-soft) !important;
-        }
-
-        .form-select {
-            border-radius: 8px;
-            border-color: var(--border-soft);
-        }
-
-        .form-select:focus {
-            border-color: var(--primary-soft);
-            box-shadow: 0 0 0 0.2rem rgba(108, 123, 127, 0.25);
         }
 
         .avatar-sm {
-            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light)) !important;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Alert Styling */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .alert-success {
+            background: linear-gradient(45deg, #10b981, #34d399);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            margin: 2rem 0;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h4 {
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #9ca3af;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .full-width-content {
+                padding: 0 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .nav-tabs {
+                padding: 0 1rem;
+            }
+            
+            .page-header {
+                padding: 1.5rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-shield-alt me-2"></i>Admin Panel
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="dashboard.php">
-                    <i class="fas fa-home me-1"></i>Dashboard
-                </a>
-                <a class="nav-link active" href="konfirmasi.php">
-                    <i class="fas fa-check-circle me-1"></i>Konfirmasi
-                </a>
-                <a class="nav-link" href="logout.php">
-                    <i class="fas fa-sign-out-alt me-1"></i>Logout
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="mb-0">
-                        <i class="fas fa-check-circle me-3"></i>Konfirmasi Pembayaran
+    <div class="layout-container">
+        <?php include 'sidebar.php'; ?>
+        
+        <div class="main-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="full-width-content">
+                    <h1>
+                        <i class="fas fa-check-circle"></i>
+                        Konfirmasi Pembayaran
                     </h1>
-                    <p class="mb-0 mt-2 opacity-75">Kelola dan verifikasi pembayaran tagihan warga</p>
+                    <p>Kelola dan konfirmasi pembayaran tagihan warga dengan bantuan teknologi OCR</p>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="d-flex justify-content-end">
-                        <div class="text-white">
-                            <small>Terakhir diperbarui</small><br>
-                            <strong><?= date('d M Y, H:i') ?></strong>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <a href="tagihan.php" class="nav-tab">
+                    <i class="fas fa-plus-circle"></i> Buat Tagihan
+                </a>
+                <a href="konfirmasi.php" class="nav-tab active">
+                    <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
+                </a>
+            </div>
+
+            <!-- Main Content -->
+            <div class="full-width-content">
+                <!-- Alert Messages -->
+                <?php if (isset($_SESSION['message'])): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <?= $_SESSION['message']; unset($_SESSION['message']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Statistics Section -->
+                <div class="stats-grid">
+                    <div class="stat-card pending">
+                        <div class="stat-number"><?php echo $stats['menunggu_konfirmasi']; ?></div>
+                        <div class="stat-label">
+                            <i class="fas fa-clock"></i>
+                            Menunggu Konfirmasi
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card ocr">
+                        <div class="stat-number"><?php echo $stats['sudah_ocr']; ?></div>
+                        <div class="stat-label">
+                            <i class="fas fa-eye"></i>
+                            Sudah di-OCR
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card nominal">
+                        <div class="stat-number">Rp <?php echo number_format($stats['total_nominal'], 0, ',', '.'); ?></div>
+                        <div class="stat-label">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Total Nominal
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="container">
-        <!-- Alert Messages -->
-        <?php if (isset($_SESSION['message'])): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <?= $_SESSION['message']; unset($_SESSION['message']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card stat-card bg-gradient-primary text-white">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-8">
-                                <h3 class="mb-0"><?= number_format($stats['menunggu_konfirmasi']) ?></h3>
-                                <p class="mb-0">Menunggu Konfirmasi</p>
-                            </div>
-                            <div class="col-4 text-end">
-                                <i class="fas fa-clock stat-icon"></i>
-                            </div>
-                        </div>
-                    </div>
+                <!-- OCR Action Card -->
+                <div class="ocr-action-card">
+                    <h5 class="mb-3">
+                        <i class="fas fa-robot me-2"></i>Pemrosesan OCR Otomatis
+                    </h5>
+                    <p class="text-muted mb-4">
+                        Jalankan OCR untuk semua bukti pembayaran yang belum diproses
+                    </p>
+                    <form method="POST" style="display: inline;">
+                        <button type="submit" name="run_all_ocr" class="btn btn-ocr" 
+                                onclick="return confirm('Yakin ingin menjalankan OCR untuk semua tagihan?')">
+                            <i class="fas fa-play me-2"></i>Jalankan OCR Semua
+                        </button>
+                    </form>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card bg-gradient-success text-white">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-8">
-                                <h3 class="mb-0"><?= number_format($stats['sudah_ocr']) ?></h3>
-                                <p class="mb-0">Sudah di-OCR</p>
-                            </div>
-                            <div class="col-4 text-end">
-                                <i class="fas fa-eye stat-icon"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stat-card bg-gradient-warning text-white">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-8">
-                                <h3 class="mb-0">Rp <?= number_format($stats['total_nominal'] ?? 0, 0, ',', '.') ?></h3>
-                                <p class="mb-0">Total Nominal</p>
-                            </div>
-                            <div class="col-4 text-end">
-                                <i class="fas fa-money-bill-wave stat-icon"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- OCR Action Card -->
-        <div class="card mb-4">
-            <div class="card-body text-center">
-                <h5 class="card-title">
-                    <i class="fas fa-robot me-2"></i>Pemrosesan OCR Otomatis
-                </h5>
-                <p class="text-muted mb-3">
-                    Jalankan OCR untuk semua bukti pembayaran yang belum diproses
-                </p>
-                <form method="POST" style="display: inline;">
-                    <button type="submit" name="run_all_ocr" class="btn btn-ocr" 
-                            onclick="return confirm('Yakin ingin menjalankan OCR untuk semua tagihan?')">
-                        <i class="fas fa-play me-2"></i>Jalankan OCR Semua
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Main Table -->
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Username</th>
-                            <th>Kode Tagihan</th>
-                            <th>Deskripsi</th>
-                            <th>Jumlah</th>
-                            <th>Hasil OCR</th>
-                            <th>Status Kesesuaian</th>
-                            <th>Tanggal</th>
-                            <th>Bukti</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($bills as $bill): ?>
-                            <?php 
-                            $ocr_details = json_decode($bill['ocr_details'], true);
-                            $match_status = checkOCRMatch($bill);
-                            $is_suitable = ($match_status === 'Sesuai');
-                            ?>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                                            <?= strtoupper(substr($bill['username'], 0, 1)) ?>
-                                        </div>
-                                        <strong><?= htmlspecialchars($bill['username']) ?></strong>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-secondary"><?= htmlspecialchars($bill['kode_tagihan']) ?></span>
-                                </td>
-                                <td>
-                                    <div style="max-width: 200px;">
-                                        <?= nl2br(htmlspecialchars(substr($bill['deskripsi'], 0, 100))) ?>
-                                        <?= strlen($bill['deskripsi']) > 100 ? '...' : '' ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <strong class="text-success">Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></strong>
-                                </td>
-                                <td>
-                                    <?php if ($ocr_details): ?>
-                                        <div class="small">
-                                            <strong>Jumlah:</strong> 
-                                            <span class="<?= ($bill['ocr_jumlah'] == $bill['jumlah']) ? 'text-success' : 'text-warning' ?>">
-                                                Rp <?= number_format($bill['ocr_jumlah'] ?? 0, 0, ',', '.') ?>
-                                            </span><br>
-                                            <strong>Kode:</strong> 
-                                            <span class="<?= ($ocr_details['extracted_code'] == $bill['kode_tagihan']) ? 'text-success' : 'text-warning' ?>">
-                                                <?= htmlspecialchars($ocr_details['extracted_code'] ?? '-') ?>
-                                            </span><br>
-                                            <strong>Tanggal:</strong> <?= htmlspecialchars($ocr_details['extracted_date'] ?? '-') ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <span class="text-muted">Belum diproses</span>
-                                    <?php endif; ?>
-                                    
-                                    <form method="POST" class="mt-2">
-                                        <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                                        <button name="run_ocr" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-search"></i> OCR
-                                        </button>
-                                    </form>
-                                </td>
-                                <td>
-                                    <?php
-                                    $badge_class = match($match_status) {
-                                        'Sesuai' => 'bg-success',
-                                        'Terlambat' => 'bg-warning',
-                                        'Tidak Sesuai' => 'bg-danger',
-                                        'Nominal Tidak Sesuai' => 'bg-danger',
-                                        default => 'bg-secondary'
-                                    };
+                <!-- Main Table -->
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Kode Tagihan</th>
+                                    <th>Deskripsi</th>
+                                    <th>Jumlah</th>
+                                    <th>Hasil OCR</th>
+                                    <th>Status Kesesuaian</th>
+                                    <th>Tanggal</th>
+                                    <th>Bukti</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($bills as $bill): ?>
+                                    <?php 
+                                    $ocr_details = json_decode($bill['ocr_details'], true);
+                                    $match_status = checkOCRMatch($bill);
+                                    $is_suitable = ($match_status === 'Sesuai');
                                     ?>
-                                    <span class="badge <?= $badge_class ?> status-badge">
-                                        <?= $match_status ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="small">
-                                        <strong>Tenggat:</strong><br>
-                                        <?= date('d M Y', strtotime($bill['tenggat_waktu'])) ?><br>
-                                        <strong>Upload:</strong><br>
-                                        <?php if ($bill['tanggal_upload']): ?>
-                                            <span class="<?= ($bill['status_ketepatan'] === 'Tepat Waktu') ? 'text-success' : 'text-danger' ?>">
-                                                <?= date('d M Y H:i', strtotime($bill['tanggal_upload'])) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="text-muted">Belum upload</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <?php if ($bill['bukti_pembayaran']): ?>
-                                        <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" 
-                                             class="proof-image" 
-                                             width="80" 
-                                             height="80" 
-                                             style="object-fit: cover;"
-                                             onclick="window.open(this.src, '_blank')">
-                                    <?php else: ?>
-                                        <span class="text-muted">Belum upload</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <form method="POST" action="proses_konfirmasi.php">
-                                        <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                                        <select name="status" class="form-select form-select-sm mb-2">
-                                            <?php if ($is_suitable): ?>
-                                                <option value="konfirmasi" selected>Konfirmasi</option>
-                                                <option value="tolak">Tolak</option>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary text-white rounded-circle me-3">
+                                                    <?= strtoupper(substr($bill['username'], 0, 1)) ?>
+                                                </div>
+                                                <strong><?= htmlspecialchars($bill['username']) ?></strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary"><?= htmlspecialchars($bill['kode_tagihan']) ?></span>
+                                        </td>
+                                        <td>
+                                            <div style="max-width: 200px;">
+                                                <?= nl2br(htmlspecialchars(substr($bill['deskripsi'], 0, 100))) ?>
+                                                <?= strlen($bill['deskripsi']) > 100 ? '...' : '' ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></strong>
+                                        </td>
+                                        <td>
+                                            <?php if ($ocr_details): ?>
+                                                <div class="small">
+                                                    <strong>Jumlah:</strong> 
+                                                    <span class="<?= ($bill['ocr_jumlah'] == $bill['jumlah']) ? 'text-success' : 'text-warning' ?>">
+                                                        Rp <?= number_format($bill['ocr_jumlah'] ?? 0, 0, ',', '.') ?>
+                                                    </span><br>
+                                                    <strong>Kode:</strong> 
+                                                    <span class="<?= ($ocr_details['extracted_code'] == $bill['kode_tagihan']) ? 'text-success' : 'text-warning' ?>">
+                                                        <?= htmlspecialchars($ocr_details['extracted_code'] ?? '-') ?>
+                                                    </span><br>
+                                                    <strong>Tanggal:</strong> <?= format_tanggal_indo($ocr_details['extracted_date'] ?? '-') ?>
+                                                </div>
                                             <?php else: ?>
-                                                <option value="tolak" selected>Tolak</option>
-                                                <option value="konfirmasi">Konfirmasi</option>
+                                                <span class="text-muted">Belum diproses</span>
                                             <?php endif; ?>
-                                        </select>
-                                        <button class="btn btn-sm <?= $is_suitable ? 'btn-success' : 'btn-warning' ?> w-100" 
-                                                onclick="return confirm('Yakin ingin memproses ini?')">
-                                            <i class="fas fa-check"></i> Proses
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            $badge_class = match($match_status) {
+                                                'Sesuai' => 'bg-success',
+                                                'Terlambat' => 'bg-warning',
+                                                'Tidak Sesuai' => 'bg-danger',
+                                                'Nominal Tidak Sesuai' => 'bg-danger',
+                                                default => 'bg-secondary'
+                                            };
+                                            ?>
+                                            <span class="badge <?= $badge_class ?> status-badge">
+                                                <?= $match_status ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <strong>Tenggat:</strong><br>
+                                                <?= date('d M Y', strtotime($bill['tenggat_waktu'])) ?><br>
+                                                <strong>Upload:</strong><br>
+                                                <?php if ($bill['tanggal_upload']): ?>
+                                                    <span class="<?= ($bill['status_ketepatan'] === 'Tepat Waktu') ? 'text-success' : 'text-danger' ?>">
+                                                        <?= date('d M Y H:i', strtotime($bill['tanggal_upload'])) ?>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="text-muted">Belum upload</span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <?php if ($bill['bukti_pembayaran']): ?>
+                                                <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" 
+                                                     class="proof-image" 
+                                                     width="80" 
+                                                     height="80" 
+                                                     style="object-fit: cover;"
+                                                     onclick="window.open(this.src, '_blank')">
+                                            <?php else: ?>
+                                                <span class="text-muted">Belum upload</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <form method="POST" action="proses_konfirmasi.php">
+                                                <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                                                <select name="status" class="form-select form-select-sm mb-2">
+                                                    <?php if ($is_suitable): ?>
+                                                        <option value="konfirmasi" selected>Konfirmasi</option>
+                                                        <option value="tolak">Tolak</option>
+                                                    <?php else: ?>
+                                                        <option value="tolak" selected>Tolak</option>
+                                                        <option value="konfirmasi">Konfirmasi</option>
+                                                    <?php endif; ?>
+                                                </select>
+                                                <button class="btn btn-sm <?= $is_suitable ? 'btn-success' : 'btn-warning' ?> w-100" 
+                                                        onclick="return confirm('Yakin ingin memproses ini?')">
+                                                    <i class="fas fa-check"></i> Proses
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <?php if (empty($bills)): ?>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h4>Tidak ada tagihan menunggu konfirmasi</h4>
+                        <p>Semua pembayaran telah diproses</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
-
-        <?php if (empty($bills)): ?>
-            <div class="text-center py-5">
-                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">Tidak ada tagihan menunggu konfirmasi</h4>
-                <p class="text-muted">Semua pembayaran telah diproses</p>
-            </div>
-        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
