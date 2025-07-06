@@ -735,6 +735,75 @@ $bills = $stmt->fetchAll();
     border-bottom-color: #2563eb;
 }
 
+/* Gaya untuk modal wajib upload */
+.modal-mandatory {
+    background: rgba(0, 0, 0, 0.8) !important;
+}
+
+.modal-mandatory .modal-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    position: relative;
+}
+
+.modal-mandatory .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 255, 255, 0.1) 10px,
+        rgba(255, 255, 255, 0.1) 20px
+    );
+}
+
+.modal-mandatory .modal-header > * {
+    position: relative;
+    z-index: 1;
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+.warning-text {
+    color: #dc3545;
+    font-weight: 600;
+    text-align: center;
+    padding: 1rem;
+    background: #f8d7da;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 2px solid #dc3545;
+}
+
+.countdown-timer {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #dc3545;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
     </style>
 </head>
 <body>
@@ -775,11 +844,14 @@ $bills = $stmt->fetchAll();
                 </div>
                 <div class="stat-card stat-total">
                     <div class="stat-number">Rp <?= number_format($stats['total_belum_bayar'], 0, ',', '.') ?></div>
-                    <div class="stat-label">Total Tagihan</div>
-                </div>
+                    <div class="stat-label">Total</div>
                 <div class="stat-card stat-overdue">
                     <div class="stat-number"><?= $stats['terlambat'] ?></div>
                     <div class="stat-label">Terlambat</div>
+                </div>
+                <div class="stat-card stat-waiting">
+                    <div class="stat-number"><?= $stats['menunggu_konfirmasi'] ?></div>
+                    <div class="stat-label">Menunggu Konfirmasi</div>
                 </div>
                 <div class="stat-card stat-success">
                     <div class="stat-number"><?= $stats['sudah_bayar'] ?></div>
@@ -791,29 +863,9 @@ $bills = $stmt->fetchAll();
                 </div>
             </div>
         
-        <!-- Information Section -->
-        <div class="info-section">
-            <h3>
-                <i class="fas fa-info-circle"></i>
-                Panduan Pembayaran
-            </h3>
-            <ul>
-                <li><strong>Pembayaran Online:</strong> Klik tombol "Bayar Sekarang" untuk melakukan pembayaran online</li>
-                <li><strong>Upload Bukti:</strong> Setelah pembayaran berhasil, wajib upload bukti pembayaran (screenshot/foto)</li>
-                <li><strong>Verifikasi:</strong> Admin akan memverifikasi pembayaran dalam 1-2 hari kerja</li>
-                <li><strong>Status Lunas:</strong> Tagihan akan berubah menjadi "Lunas" setelah diverifikasi</li>
-            </ul>
-        </div>
-        
-        <!-- Bills Container -->
+        <!-- Bills List -->
         <div class="bills-container">
-            <?php if (empty($bills)): ?>
-                <div class="empty-state">
-                    <i class="fas fa-clipboard-check"></i>
-                    <h3>Tidak Ada Tagihan</h3>
-                    <p>Selamat! Anda tidak memiliki tagihan yang perlu dibayar saat ini.</p>
-                </div>
-            <?php else: ?>
+            <?php if (count($bills) > 0): ?>
                 <?php foreach ($bills as $bill): ?>
                     <div class="bill-card <?= $bill['is_overdue'] ? 'overdue' : '' ?>">
                         <div class="bill-header">
@@ -822,411 +874,405 @@ $bills = $stmt->fetchAll();
                                 <div class="bill-description"><?= htmlspecialchars($bill['deskripsi']) ?></div>
                             </div>
                             <div>
-                                <?php
-                                $status_class = 'status-pending';
-                                $status_text = 'Belum Dibayar';
-                                
-                                if ($bill['is_overdue']) {
-                                    $status_class = 'status-overdue';
-                                    $status_text = 'Terlambat';
-                                }
-                                
-                                if ($bill['status']) {
-                                    switch ($bill['status']) {
-                                        case 'menunggu_pembayaran':
-                                            $status_class = 'status-pending';
-                                            $status_text = 'Menunggu Pembayaran';
-                                            break;
-                                        case 'tolak':
-                                            $status_class = 'status-rejected';
-                                            $status_text = 'Ditolak';
-                                            break;
-                                    }
-                                }
-                                ?>
-                                <span class="status-badge <?= $status_class ?>">
-                                    <?= $status_text ?>
-                                </span>
+                                <?php if ($bill['is_overdue']): ?>
+                                    <span class="status-badge status-overdue">
+                                        <i class="fas fa-exclamation-triangle"></i> Terlambat
+                                    </span>
+                                <?php elseif ($bill['status'] == 'tolak'): ?>
+                                    <span class="status-badge status-rejected">
+                                        <i class="fas fa-times-circle"></i> Ditolak
+                                    </span>
+                                <?php else: ?>
+                                    <span class="status-badge status-pending">
+                                        <i class="fas fa-clock"></i> Menunggu Pembayaran
+                                    </span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
                         <div class="bill-info">
                             <div class="info-item">
-                                <div class="info-label">Jumlah Tagihan</div>
+                                <div class="info-label">Jumlah</div>
                                 <div class="info-value amount">Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">Tanggal Tagihan</div>
-                                <div class="info-value"><?= date('d M Y', strtotime($bill['tanggal'])) ?></div>
+                                <div class="info-value"><?= date('d/m/Y', strtotime($bill['tanggal'])) ?></div>
                             </div>
-                            <?php if ($bill['tenggat_waktu']): ?>
                             <div class="info-item">
                                 <div class="info-label">Tenggat Waktu</div>
-                                <div class="info-value"><?= date('d M Y', strtotime($bill['tenggat_waktu'])) ?></div>
+                                <div class="info-value"><?= date('d/m/Y', strtotime($bill['tenggat_waktu'])) ?></div>
                             </div>
-                            <?php endif; ?>
                             <?php if ($bill['tanggal_kirim']): ?>
-                            <div class="info-item">
-                                <div class="info-label">Tanggal Kirim</div>
-                                <div class="info-value"><?= date('d M Y', strtotime($bill['tanggal_kirim'])) ?></div>
-                            </div>
+                                <div class="info-item">
+                                    <div class="info-label">Tanggal Kirim</div>
+                                    <div class="info-value"><?= date('d/m/Y', strtotime($bill['tanggal_kirim'])) ?></div>
+                                </div>
                             <?php endif; ?>
                         </div>
                         
-                        <?php if (!$bill['status'] || $bill['status'] == 'menunggu_pembayaran' || $bill['status'] == 'tolak'): ?><div class="d-flex gap-2 justify-content-center">
-                            <button class="btn btn-pay" onclick="createPayment(<?= $bill['id'] ?>, <?= $bill['user_bill_id'] ?: 0 ?>)">
-                                <i class="fas fa-credit-card"></i>
-                                Bayar Sekarang
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-pay" onclick="showPaymentModal(<?= $bill['id'] ?>, <?= $bill['user_bill_id'] ?>, '<?= addslashes($bill['kode_tagihan']) ?>', <?= $bill['jumlah'] ?>)">
+                                <i class="fas fa-credit-card"></i> Bayar Sekarang
                             </button>
-                            <?php if ($bill['user_bill_id'] && $bill['status'] == 'tolak'): ?>
-                            <button class="btn btn-success" onclick="openUploadModal(<?= $bill['user_bill_id'] ?>)">
-                                <i class="fas fa-upload"></i>
-                                Upload Ulang
-                            </button>
-                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
+            <?php else: ?>
+                <div class="empty-state">
+                    <i class="fas fa-file-invoice"></i>
+                    <h3>Tidak ada tagihan yang perlu dibayar</h3>
+                    <p>Semua tagihan Anda sudah lunas atau belum ada tagihan baru.</p>
+                </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- Modal Upload Wajib Setelah Pembayaran -->
-<div class="modal fade" id="mandatoryUploadModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-check-circle"></i>
-                    Pembayaran Berhasil - Upload Bukti Wajib
-                </h5>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <strong>Pembayaran Berhasil!</strong> Tagihan Anda telah berhasil dibayar.
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">
+                        <i class="fas fa-credit-card"></i> Pembayaran Tagihan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>WAJIB:</strong> Upload bukti pembayaran untuk menyelesaikan proses.
-                </div>
-                
-                <form id="mandatoryUploadForm" enctype="multipart/form-data">
-                    <input type="hidden" id="mandatoryUserBillId" name="user_bill_id">
-                    <input type="hidden" name="action" value="upload_bukti">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Pilih File Bukti Pembayaran *</label>
-                        <input type="file" class="form-control" id="mandatoryFileInput" name="bukti_pembayaran" accept=".jpg,.jpeg,.png" required>
-                        <div class="form-text">Format: JPG, JPEG, PNG (Max: 2MB)</div>
+                <div class="modal-body">
+                    <div id="paymentContent">
+                        <!-- Payment content will be loaded here -->
                     </div>
-                    
-                    <div id="mandatoryPreview" class="mb-3" style="display: none;">
-                        <img id="mandatoryPreviewImg" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-                        <div id="mandatoryFileName" class="small text-muted mt-2"></div>
-                    </div>
-                    
-                    <div class="progress mb-3" id="mandatoryProgress" style="display: none;">
-                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-success w-100" id="mandatoryUploadBtn" disabled>
-                        <i class="fas fa-upload"></i> Upload Bukti Pembayaran
-                    </button>
-                </form>
-                
-                <div class="text-center mt-3">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i>
-                        Modal akan tertutup setelah upload berhasil
-                    </small>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal Upload Biasa -->
-<div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-upload"></i> Upload Bukti Pembayaran
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <input type="hidden" id="userBillId" name="user_bill_id">
-                    <input type="hidden" name="action" value="upload_bukti">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Pilih File Bukti Pembayaran</label>
-                        <input type="file" class="form-control" id="fileInput" name="bukti_pembayaran" accept=".jpg,.jpeg,.png" required>
-                        <div class="form-text">Format: JPG, JPEG, PNG (Max: 2MB)</div>
-                    </div>
-                    
-                    <div id="preview" class="mb-3" style="display: none;">
-                        <img id="previewImg" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-                        <div id="fileName" class="small text-muted mt-2"></div>
-                    </div>
-                    
-                    <div class="progress mb-3" id="progress" style="display: none;">
-                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100" id="uploadBtn" disabled>
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
                         <i class="fas fa-upload"></i> Upload Bukti Pembayaran
-                    </button>
-                </form>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="warning-text">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Upload bukti pembayaran yang jelas dan dapat dibaca. Format yang diterima: JPG, JPEG, PNG (maksimal 2MB)
+                    </div>
+                    
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="hidden" id="uploadUserBillId" name="user_bill_id">
+                        <input type="hidden" name="action" value="upload_bukti">
+                        
+                        <div class="upload-zone" id="uploadZone">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Klik atau drag file ke sini</h4>
+                            <p>File gambar (JPG, JPEG, PNG) maksimal 2MB</p>
+                            <input type="file" id="fileInput" name="bukti_pembayaran" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div id="filePreview" style="display: none;">
+                            <img id="previewImage" class="file-preview" alt="Preview">
+                            <div class="text-center">
+                                <button type="button" class="btn btn-secondary" onclick="resetUpload()">
+                                    <i class="fas fa-times"></i> Ganti File
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-container" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-upload" id="uploadBtn" disabled>
+                            <i class="fas fa-upload"></i> Upload Bukti Pembayaran
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-let currentUserBillId = null;
-let currentOrderId = null;
-let paymentCompleted = false;
-
-// Fungsi untuk membuat pembayaran
-function createPayment(billId, userBillId) {
-    const loadingHtml = `
-        <div id="loadingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-             background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 9999;">
-            <div class="text-center text-white">
-                <div class="spinner-border" role="status"></div>
-                <p class="mt-2">Memproses pembayaran...</p>
-            </div>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', loadingHtml);
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `action=create_payment&bill_id=${billId}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('loadingOverlay').remove();
-        
-        if (data.status === 'success') {
-            currentUserBillId = data.user_bill_id;
-            currentOrderId = data.order_id;
+        <p class="mt-2">Memproses pembayaran...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPaymentData = {};
+        let paymentCheckInterval;
+
+        function showPaymentModal(billId, userBillId, kodeTagihan, jumlah) {
+            currentPaymentData = {
+                billId: billId,
+                userBillId: userBillId,
+                kodeTagihan: kodeTagihan,
+                jumlah: jumlah
+            };
+
+            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
             
-            // Buka Midtrans Snap
-            snap.pay(data.snap_token, {
-                onSuccess: function(result) {
-                    console.log('Payment success:', result);
-                    paymentCompleted = true;
+            // Set content
+            document.getElementById('paymentContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Detail Tagihan</h4>
+                        <table class="table table-bordered">
+                            <tr>
+                                <td><strong>Kode Tagihan:</strong></td>
+                                <td>${kodeTagihan}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Jumlah:</strong></td>
+                                <td><strong>Rp ${new Intl.NumberFormat('id-ID').format(jumlah)}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Pilih Metode Pembayaran</h4>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg" onclick="processPayment('online')">
+                                <i class="fas fa-credit-card"></i> Bayar Online
+                            </button>
+                            <button class="btn btn-success btn-lg" onclick="processPayment('upload')">
+                                <i class="fas fa-upload"></i> Upload Bukti Transfer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.show();
+        }
+
+        function processPayment(method) {
+            if (method === 'online') {
+                payOnline();
+            } else if (method === 'upload') {
+                showUploadModal();
+            }
+        }
+
+        function payOnline() {
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            
+            // Create payment
+            fetch('tagihan.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=create_payment&bill_id=${currentPaymentData.billId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                if (data.status === 'success') {
+                    // Close payment modal
+                    bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
                     
-                    // Wajib upload setelah pembayaran berhasil
-                    showMandatoryUpload();
+                    // Open Midtrans Snap
+                    snap.pay(data.snap_token, {
+                        onSuccess: function(result) {
+                            checkPaymentStatus(data.order_id, data.user_bill_id);
+                        },
+                        onPending: function(result) {
+                            startPaymentStatusCheck(data.order_id, data.user_bill_id);
+                        },
+                        onError: function(result) {
+                            alert('Pembayaran gagal! Silakan coba lagi.');
+                        },
+                        onClose: function() {
+                            // Start checking payment status when modal is closed
+                            startPaymentStatusCheck(data.order_id, data.user_bill_id);
+                        }
+                    });
+                } else {
+                    alert('Gagal membuat pembayaran: ' + data.message);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                alert('Terjadi kesalahan saat memproses pembayaran');
+                console.error('Error:', error);
+            });
+        }
+
+        function startPaymentStatusCheck(orderId, userBillId) {
+            // Clear existing interval
+            if (paymentCheckInterval) {
+                clearInterval(paymentCheckInterval);
+            }
+            
+            // Check every 5 seconds
+            paymentCheckInterval = setInterval(() => {
+                checkPaymentStatus(orderId, userBillId);
+            }, 5000);
+        }
+
+        function checkPaymentStatus(orderId, userBillId) {
+            fetch('tagihan.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                onPending: function(result) {
-                    console.log('Payment pending:', result);
-                    alert('Pembayaran sedang diproses. Silakan cek status pembayaran Anda.');
-                },
-                onError: function(result) {
-                    console.log('Payment error:', result);
-                    alert('Pembayaran gagal. Silakan coba lagi.');
-                },
-                onClose: function() {
-                    console.log('Payment popup closed');
-                    if (paymentCompleted) {
-                        showMandatoryUpload();
+                body: `action=check_payment_status&order_id=${orderId}&user_bill_id=${userBillId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.payment_status === 'paid') {
+                    // Clear interval
+                    if (paymentCheckInterval) {
+                        clearInterval(paymentCheckInterval);
                     }
+                    
+                    // Show success message and reload page
+                    alert('Pembayaran berhasil! Halaman akan dimuat ulang.');
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking payment status:', error);
+            });
+        }
+
+        function showUploadModal() {
+            // Close payment modal
+            bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+            
+            // Set user bill ID
+            document.getElementById('uploadUserBillId').value = currentPaymentData.userBillId;
+            
+            // Show upload modal
+            const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            uploadModal.show();
+        }
+
+        // Upload functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+            const filePreview = document.getElementById('filePreview');
+            const previewImage = document.getElementById('previewImage');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadForm = document.getElementById('uploadForm');
+
+            // Click to select file
+            uploadZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Drag and drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
                 }
             });
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        document.getElementById('loadingOverlay')?.remove();
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat membuat pembayaran');
-    });
-}
 
-// Fungsi untuk menampilkan upload wajib
-function showMandatoryUpload() {
-    document.getElementById('mandatoryUserBillId').value = currentUserBillId;
-    const mandatoryModal = new bootstrap.Modal(document.getElementById('mandatoryUploadModal'));
-    mandatoryModal.show();
-}
-
-// Fungsi untuk membuka modal upload biasa
-function openUploadModal(userBillId) {
-    document.getElementById('userBillId').value = userBillId;
-    const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
-    uploadModal.show();
-}
-
-// Setup file input untuk upload wajib
-document.getElementById('mandatoryFileInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        if (!validateFile(file)) {
-            this.value = '';
-            return;
-        }
-        
-        showPreview(file, 'mandatory');
-        document.getElementById('mandatoryUploadBtn').disabled = false;
-    }
-});
-
-// Setup file input untuk upload biasa
-document.getElementById('fileInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        if (!validateFile(file)) {
-            this.value = '';
-            return;
-        }
-        
-        showPreview(file, 'normal');
-        document.getElementById('uploadBtn').disabled = false;
-    }
-});
-
-// Fungsi validasi file
-function validateFile(file) {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-        alert('Tipe file tidak diizinkan. Gunakan JPG, JPEG, atau PNG');
-        return false;
-    }
-    
-    if (file.size > 2 * 1024 * 1024) { // 2MB
-        alert('Ukuran file terlalu besar. Maksimal 2MB');
-        return false;
-    }
-    
-    return true;
-}
-
-// Fungsi untuk menampilkan preview
-function showPreview(file, type) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        if (type === 'mandatory') {
-            document.getElementById('mandatoryPreviewImg').src = e.target.result;
-            document.getElementById('mandatoryFileName').textContent = file.name;
-            document.getElementById('mandatoryPreview').style.display = 'block';
-        } else {
-            document.getElementById('previewImg').src = e.target.result;
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('preview').style.display = 'block';
-        }
-    };
-    reader.readAsDataURL(file);
-}
-
-// Handle submit upload wajib
-document.getElementById('mandatoryUploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    uploadFile(this, 'mandatory');
-});
-
-// Handle submit upload biasa
-document.getElementById('uploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    uploadFile(this, 'normal');
-});
-
-// Fungsi upload file
-function uploadFile(form, type) {
-    const formData = new FormData(form);
-    const progressBar = document.querySelector(`#${type === 'mandatory' ? 'mandatoryProgress' : 'progress'} .progress-bar`);
-    const progressContainer = document.getElementById(type === 'mandatory' ? 'mandatoryProgress' : 'progress');
-    const uploadBtn = document.getElementById(type === 'mandatory' ? 'mandatoryUploadBtn' : 'uploadBtn');
-    
-    progressContainer.style.display = 'block';
-    uploadBtn.disabled = true;
-    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-    
-    // Animasi progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        progress += 10;
-        progressBar.style.width = progress + '%';
-        
-        if (progress >= 90) {
-            clearInterval(progressInterval);
-        }
-    }, 100);
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        
-        setTimeout(() => {
-            if (data.status === 'success') {
-                alert('Bukti pembayaran berhasil diupload!');
-                
-                if (type === 'mandatory') {
-                    // Reset status dan tutup modal
-                    paymentCompleted = false;
-                    currentUserBillId = null;
-                    currentOrderId = null;
-                    
-                    const mandatoryModal = bootstrap.Modal.getInstance(document.getElementById('mandatoryUploadModal'));
-                    mandatoryModal.hide();
+            // File input change
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
                 }
-                
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-                resetUploadForm(type);
+            });
+
+            function handleFileSelect(file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('File harus berupa gambar!');
+                    return;
+                }
+
+                // Validate file size (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Ukuran file maksimal 2MB!');
+                    return;
+                }
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    uploadZone.style.display = 'none';
+                    filePreview.style.display = 'block';
+                    uploadBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
             }
-        }, 500);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat mengupload file');
-        resetUploadForm(type);
-    });
-}
 
-// Reset form upload
-function resetUploadForm(type) {
-    const progressContainer = document.getElementById(type === 'mandatory' ? 'mandatoryProgress' : 'progress');
-    const uploadBtn = document.getElementById(type === 'mandatory' ? 'mandatoryUploadBtn' : 'uploadBtn');
-    
-    progressContainer.style.display = 'none';
-    uploadBtn.disabled = false;
-    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti Pembayaran';
-}
+            // Upload form submit
+            uploadForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(uploadForm);
+                const progressContainer = document.querySelector('.progress-container');
+                const progressBar = document.querySelector('.progress-bar');
+                
+                // Show progress
+                progressContainer.style.display = 'block';
+                uploadBtn.disabled = true;
+                
+                fetch('tagihan.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Bukti pembayaran berhasil diupload!');
+                        bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+                        location.reload();
+                    } else {
+                        alert('Gagal upload: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Terjadi kesalahan saat upload');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    progressContainer.style.display = 'none';
+                    uploadBtn.disabled = false;
+                });
+            });
+        });
 
-// Prevent page unload jika ada upload wajib
-window.addEventListener('beforeunload', function(e) {
-    if (paymentCompleted) {
-        e.preventDefault();
-        e.returnValue = 'Anda harus upload bukti pembayaran dulu!';
-        return 'Anda harus upload bukti pembayaran dulu!';
-    }
-});
+        function resetUpload() {
+            document.getElementById('uploadZone').style.display = 'block';
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadBtn').disabled = true;
+        }
 
-// Disable ESC key pada modal wajib
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('mandatoryUploadModal').classList.contains('show')) {
-        e.preventDefault();
-        alert('Anda harus upload bukti pembayaran terlebih dahulu!');
-    }
-});
-</script>
+        // Clear payment check interval when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (paymentCheckInterval) {
+                clearInterval(paymentCheckInterval);
+            }
+        });
+    </script>
 </body>
 </html>
