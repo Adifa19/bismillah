@@ -20,6 +20,65 @@ function format_tanggal_indo($tanggal) {
     
     return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
 }
+
+// Handle konfirmasi/tolak tagihan
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['user_bill_id'])) {
+    $user_bill_id = (int)$_POST['user_bill_id'];
+    $new_status = $_POST['status'];
+    
+    // Validasi status
+    if (!in_array($new_status, ['konfirmasi', 'tolak'])) {
+        $_SESSION['message'] = '❌ Status tidak valid.';
+        header('Location: konfirmasi.php');
+        exit;
+    }
+    
+    try {
+        // Ambil data tagihan untuk validasi
+        $stmt = $pdo->prepare("SELECT ub.*, b.kode_tagihan, b.jumlah, u.username 
+                               FROM user_bills ub 
+                               JOIN bills b ON ub.bill_id = b.id 
+                               JOIN users u ON ub.user_id = u.id 
+                               WHERE ub.id = ? AND ub.status = 'menunggu_konfirmasi'");
+        $stmt->execute([$user_bill_id]);
+        $bill = $stmt->fetch();
+        
+        if (!$bill) {
+            $_SESSION['message'] = '❌ Tagihan tidak ditemukan atau sudah diproses.';
+            header('Location: konfirmasi.php');
+            exit;
+        }
+        
+        // Update status tagihan
+        $stmt = $pdo->prepare("UPDATE user_bills SET status = ? WHERE id = ?");
+        $stmt->execute([$new_status, $user_bill_id]);
+        
+        // Jika dikonfirmasi, simpan ke tabel tagihan_oke
+        if ($new_status === 'konfirmasi') {
+            $stmt = $pdo->prepare("INSERT INTO tagihan_oke (user_bill_id, kode_tagihan, jumlah, tanggal, user_id, qr_code_hash, bukti_pembayaran) 
+                                   VALUES (?, ?, ?, CURDATE(), ?, ?, ?)");
+            $stmt->execute([
+                $user_bill_id,
+                $bill['kode_tagihan'],
+                $bill['jumlah'],
+                $bill['user_id'],
+                $bill['qr_code_hash'],
+                $bill['bukti_pembayaran']
+            ]);
+            
+            $_SESSION['message'] = "✅ Pembayaran dari {$bill['username']} untuk tagihan {$bill['kode_tagihan']} berhasil dikonfirmasi.";
+        } else {
+            $_SESSION['message'] = "❌ Pembayaran dari {$bill['username']} untuk tagihan {$bill['kode_tagihan']} ditolak.";
+        }
+        
+    } catch (PDOException $e) {
+        $_SESSION['message'] = '❌ Terjadi kesalahan: ' . $e->getMessage();
+    }
+    
+    header('Location: konfirmasi.php');
+    exit;
+}
+
 // Jalankan OCR untuk semua tagihan menunggu konfirmasi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_all_ocr'])) {
     $stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah FROM user_bills ub JOIN bills b ON ub.bill_id = b.id WHERE ub.status = 'menunggu_konfirmasi' AND ub.bukti_pembayaran IS NOT NULL AND ub.ocr_details IS NULL");
@@ -428,6 +487,26 @@ function checkOCRMatch($bill) {
             color: white;
         }
 
+        .alert-danger {
+            background: linear-gradient(45deg, #ef4444, #f87171);
+            color: white;
+        }
+
+        /* Action Form Styling */
+        .action-form {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .action-form .form-select {
+            min-width: 120px;
+        }
+
+        .btn-process {
+            white-space: nowrap;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -484,6 +563,11 @@ function checkOCRMatch($bill) {
             .table-responsive {
                 font-size: 0.875rem;
             }
+            
+            .action-form {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
         }
     </style>
 </head>
@@ -517,8 +601,12 @@ function checkOCRMatch($bill) {
             <div class="full-width-content">
                 <!-- Alert Messages -->
                 <?php if (isset($_SESSION['message'])): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i>
+                    <?php 
+                    $is_success = strpos($_SESSION['message'], '✅') !== false;
+                    $alert_class = $is_success ? 'alert-success' : 'alert-danger';
+                    ?>
+                    <div class="alert <?= $alert_class ?> alert-dismissible fade show" role="alert">
+                        <i class="fas fa-<?= $is_success ? 'check-circle' : 'exclamation-circle' ?> me-2"></i>
                         <?= $_SESSION['message']; unset($_SESSION['message']); ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -627,84 +715,237 @@ function checkOCRMatch($bill) {
                                                 </div>
                                             <?php else: ?>
                                                 <span class="text-muted">Belum diproses</span>
-                                            <?php endif; ?>
+                                                <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php
                                             $badge_class = match($match_status) {
                                                 'Sesuai' => 'bg-success',
                                                 'Terlambat' => 'bg-warning',
-                                                'Tidak Sesuai' => 'bg-danger',
                                                 'Nominal Tidak Sesuai' => 'bg-danger',
+                                                'Tidak Sesuai' => 'bg-danger',
                                                 default => 'bg-secondary'
                                             };
                                             ?>
-                                            <span class="badge <?= $badge_class ?> status-badge">
-                                                <?= $match_status ?>
-                                            </span>
+                                            <span class="status-badge <?= $badge_class ?>"><?= $match_status ?></span>
                                         </td>
                                         <td>
                                             <div class="small">
-                                                <strong>Tenggat:</strong><br>
-                                                <?= date('d M Y', strtotime($bill['tenggat_waktu'])) ?><br>
-                                                <strong>Upload:</strong><br>
-                                                <?php if ($bill['tanggal_upload']): ?>
-                                                    <span class="<?= ($bill['status_ketepatan'] === 'Tepat Waktu') ? 'text-success' : 'text-danger' ?>">
-                                                        <?= date('d M Y H:i', strtotime($bill['tanggal_upload'])) ?>
+                                                <strong>Upload:</strong> <?= format_tanggal_indo($bill['tanggal_upload']) ?><br>
+                                                <strong>Tenggat:</strong> <?= format_tanggal_indo($bill['tenggat_waktu']) ?><br>
+                                                <?php if ($bill['selisih_hari'] !== null): ?>
+                                                    <span class="<?= $bill['selisih_hari'] <= 0 ? 'text-success' : 'text-danger' ?>">
+                                                        <?= $bill['selisih_hari'] <= 0 ? 'Tepat waktu' : $bill['selisih_hari'] . ' hari terlambat' ?>
                                                     </span>
-                                                <?php else: ?>
-                                                    <span class="text-muted">Belum upload</span>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
                                         <td>
                                             <?php if ($bill['bukti_pembayaran']): ?>
                                                 <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" 
-                                                     class="proof-image" 
-                                                     width="80" 
-                                                     height="80" 
-                                                     style="object-fit: cover;"
-                                                     onclick="window.open(this.src, '_blank')">
+                                                     alt="Bukti Pembayaran" 
+                                                     class="proof-image"
+                                                     style="width: 60px; height: 60px; object-fit: cover;"
+                                                     data-bs-toggle="modal" 
+                                                     data-bs-target="#imageModal<?= $bill['id'] ?>">
                                             <?php else: ?>
-                                                <span class="text-muted">Belum upload</span>
+                                                <span class="text-muted">Tidak ada</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <form method="POST" action="konfirmasi.php">
-                                                <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                                                <select name="status" class="form-select form-select-sm mb-2">
-                                                    <?php if ($is_suitable): ?>
-                                                        <option value="konfirmasi" selected>Konfirmasi</option>
-                                                        <option value="tolak">Tolak</option>
-                                                    <?php else: ?>
-                                                        <option value="tolak" selected>Tolak</option>
-                                                        <option value="konfirmasi">Konfirmasi</option>
-                                                    <?php endif; ?>
-                                                </select>
-                                                <button class="btn btn-sm <?= $is_suitable ? 'btn-success' : 'btn-warning' ?> w-100" 
-                                                        onclick="return confirm('Yakin ingin memproses ini?')">
-                                                    <i class="fas fa-check"></i> Proses
-                                                </button>
-                                            </form>
+                                            <div class="action-form">
+                                                <!-- OCR Button -->
+                                                <?php if ($bill['bukti_pembayaran'] && !$ocr_details): ?>
+                                                    <form method="POST" style="display: inline;">
+                                                        <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                                                        <button type="submit" name="run_ocr" class="btn btn-sm btn-outline-primary" title="Jalankan OCR">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                                
+                                                <!-- Konfirmasi/Tolak Form -->
+                                                <form method="POST" style="display: inline;">
+                                                    <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                                                    <div class="d-flex gap-1">
+                                                        <button type="submit" name="status" value="konfirmasi" 
+                                                                class="btn btn-sm <?= $is_suitable ? 'btn-success' : 'btn-outline-success' ?>" 
+                                                                title="Konfirmasi Pembayaran"
+                                                                onclick="return confirm('Yakin ingin mengkonfirmasi pembayaran ini?')">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                        <button type="submit" name="status" value="tolak" 
+                                                                class="btn btn-sm btn-outline-danger" 
+                                                                title="Tolak Pembayaran"
+                                                                onclick="return confirm('Yakin ingin menolak pembayaran ini?')">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
+                                    
+                                    <!-- Modal for image preview -->
+                                    <?php if ($bill['bukti_pembayaran']): ?>
+                                        <div class="modal fade" id="imageModal<?= $bill['id'] ?>" tabindex="-1">
+                                            <div class="modal-dialog modal-lg">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Bukti Pembayaran - <?= htmlspecialchars($bill['username']) ?></h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body text-center">
+                                                        <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" 
+                                                             alt="Bukti Pembayaran" 
+                                                             class="img-fluid rounded">
+                                                        
+                                                        <!-- OCR Details -->
+                                                        <?php if ($ocr_details): ?>
+                                                            <div class="mt-4 text-start">
+                                                                <h6><i class="fas fa-robot me-2"></i>Detail OCR:</h6>
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <small class="text-muted">Teks yang diekstrak:</small>
+                                                                        <div class="border rounded p-2 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                                                            <pre class="small mb-0"><?= htmlspecialchars($ocr_details['extracted_text'] ?? 'Tidak ada') ?></pre>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <small class="text-muted">Teks yang dinormalisasi:</small>
+                                                                        <div class="border rounded p-2 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                                                            <pre class="small mb-0"><?= htmlspecialchars($ocr_details['normalized_text'] ?? 'Tidak ada') ?></pre>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row mt-3">
+                                                                    <div class="col-md-4">
+                                                                        <small class="text-muted">Jumlah yang ditemukan:</small>
+                                                                        <div class="fw-bold <?= ($bill['ocr_jumlah'] == $bill['jumlah']) ? 'text-success' : 'text-warning' ?>">
+                                                                            Rp <?= number_format($bill['ocr_jumlah'] ?? 0, 0, ',', '.') ?>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <small class="text-muted">Kode yang ditemukan:</small>
+                                                                        <div class="fw-bold <?= ($ocr_details['extracted_code'] == $bill['kode_tagihan']) ? 'text-success' : 'text-warning' ?>">
+                                                                            <?= htmlspecialchars($ocr_details['extracted_code'] ?? '-') ?>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <small class="text-muted">Tanggal yang ditemukan:</small>
+                                                                        <div class="fw-bold">
+                                                                            <?= format_tanggal_indo($ocr_details['extracted_date'] ?? '-') ?>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+                <!-- Empty State -->
                 <?php if (empty($bills)): ?>
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
-                        <h4>Tidak ada tagihan menunggu konfirmasi</h4>
-                        <p>Semua pembayaran telah diproses</p>
+                        <h4>Tidak Ada Tagihan</h4>
+                        <p>Belum ada tagihan yang menunggu konfirmasi.</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+
+        // Enhanced image modal functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageModals = document.querySelectorAll('[id^="imageModal"]');
+            imageModals.forEach(function(modal) {
+                modal.addEventListener('shown.bs.modal', function() {
+                    const img = modal.querySelector('img');
+                    if (img) {
+                        // Add zoom functionality
+                        img.style.cursor = 'zoom-in';
+                        img.addEventListener('click', function() {
+                            if (img.style.transform === 'scale(1.5)') {
+                                img.style.transform = 'scale(1)';
+                                img.style.cursor = 'zoom-in';
+                            } else {
+                                img.style.transform = 'scale(1.5)';
+                                img.style.cursor = 'zoom-out';
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        // Confirmation dialogs with enhanced UX
+        function confirmAction(action, billCode, username) {
+            const actionText = action === 'konfirmasi' ? 'mengkonfirmasi' : 'menolak';
+            const message = `Yakin ingin ${actionText} pembayaran dari ${username} untuk tagihan ${billCode}?`;
+            return confirm(message);
+        }
+
+        // Add loading state to buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        const originalText = submitBtn.innerHTML;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+                        
+                        // Re-enable button after 3 seconds as fallback
+                        setTimeout(function() {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }, 3000);
+                    }
+                });
+            });
+        });
+
+        // Real-time status updates (if needed)
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+R to refresh
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                refreshPage();
+            }
+        });
+    </script>
 </body>
 </html>
