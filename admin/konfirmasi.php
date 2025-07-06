@@ -1,6 +1,5 @@
 <?php
 require_once '../config.php';
-require_once '../functions.php';
 requireLogin();
 
 // Ambil user_bills dengan status menunggu_konfirmasi
