@@ -109,10 +109,7 @@ $stats = [
 ];
 
 // Ambil tagihan menunggu konfirmasi dengan semua data yang diperlukan
-$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, 
-    ub.tanggal as tanggal_kirim,
-    b.tanggal as tenggat,
-    u.username,
+$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username,
     CASE 
         WHEN ub.tanggal_upload IS NULL THEN 'Belum Upload'
         WHEN ub.tanggal_upload <= b.tenggat_waktu THEN 'Tepat Waktu'
@@ -169,75 +166,231 @@ function checkOCRMatch($bill) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-soft: #6c7b7f;
+            --primary-light: #8fa3a7;
+            --success-soft: #7fb069;
+            --success-light: #9bc53d;
+            --warning-soft: #d4a574;
+            --warning-light: #f4c2a1;
+            --danger-soft: #c97064;
+            --danger-light: #e8998d;
+            --info-soft: #5d737e;
+            --info-light: #8fa3a7;
+            --bg-soft: #f8f9fa;
+            --text-soft: #495057;
+            --border-soft: #dee2e6;
+        }
+
+        body {
+            background-color: var(--bg-soft);
+            color: var(--text-soft);
+        }
+
         .navbar-brand {
-            font-weight: bold;
-            color: #2c3e50 !important;
+            font-weight: 600;
+            color: var(--primary-soft) !important;
         }
+
+        .navbar {
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .nav-link {
+            color: var(--text-soft) !important;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-soft) !important;
+        }
+
+        .nav-link.active {
+            color: var(--primary-soft) !important;
+            font-weight: 500;
+        }
+
         .stat-card {
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+            border-radius: 16px;
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
         }
+
         .stat-card:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
         }
+
         .stat-icon {
-            font-size: 2.5rem;
-            opacity: 0.8;
+            font-size: 2.2rem;
+            opacity: 0.7;
         }
+
         .table-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
+
         .status-badge {
             font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            font-weight: 500;
         }
+
         .btn-ocr {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light));
             border: none;
             color: white;
-            border-radius: 8px;
-            padding: 12px 24px;
+            border-radius: 12px;
+            padding: 12px 28px;
             font-weight: 500;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(108, 123, 127, 0.2);
         }
+
         .btn-ocr:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 16px rgba(108, 123, 127, 0.3);
             color: white;
         }
+
         .bg-gradient-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light));
         }
+
         .bg-gradient-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, var(--success-soft), var(--success-light));
         }
+
         .bg-gradient-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, var(--warning-soft), var(--warning-light));
         }
+
         .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light));
             color: white;
-            padding: 2rem 0;
+            padding: 3rem 0;
             margin-bottom: 2rem;
         }
+
         .proof-image {
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            border: 2px solid var(--border-soft);
         }
+
         .proof-image:hover {
             transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .card {
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .table-dark {
+            background-color: var(--primary-soft) !important;
+            border-color: var(--primary-soft) !important;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(108, 123, 127, 0.05);
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, var(--success-soft), var(--success-light));
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-soft), var(--success-light));
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-soft), var(--warning-light));
+            border: none;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .btn-outline-primary {
+            border-color: var(--primary-soft);
+            color: var(--primary-soft);
+            border-radius: 8px;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-soft);
+            border-color: var(--primary-soft);
+        }
+
+        .badge {
+            border-radius: 8px;
+        }
+
+        .bg-secondary {
+            background-color: var(--info-soft) !important;
+        }
+
+        .bg-success {
+            background-color: var(--success-soft) !important;
+        }
+
+        .bg-warning {
+            background-color: var(--warning-soft) !important;
+        }
+
+        .bg-danger {
+            background-color: var(--danger-soft) !important;
+        }
+
+        .text-success {
+            color: var(--success-soft) !important;
+        }
+
+        .text-warning {
+            color: var(--warning-soft) !important;
+        }
+
+        .text-danger {
+            color: var(--danger-soft) !important;
+        }
+
+        .form-select {
+            border-radius: 8px;
+            border-color: var(--border-soft);
+        }
+
+        .form-select:focus {
+            border-color: var(--primary-soft);
+            box-shadow: 0 0 0 0.2rem rgba(108, 123, 127, 0.25);
+        }
+
+        .avatar-sm {
+            background: linear-gradient(135deg, var(--primary-soft), var(--primary-light)) !important;
         }
     </style>
 </head>
-<body class="bg-light">
+<body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-shield-alt me-2"></i>Admin Panel
@@ -442,14 +595,6 @@ function checkOCRMatch($bill) {
                                     <div class="small">
                                         <strong>Tenggat:</strong><br>
                                         <?= date('d M Y', strtotime($bill['tenggat_waktu'])) ?><br>
-                                        <strong>Terkirim:</strong><br>
-                                        <?php if ($bill['tanggal_kirim']): ?>
-                                            <span class="text-info">
-                                                <?= date('d M Y', strtotime($bill['tanggal_kirim'])) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="text-muted">Belum terkirim</span>
-                                        <?php endif; ?><br>
                                         <strong>Upload:</strong><br>
                                         <?php if ($bill['tanggal_upload']): ?>
                                             <span class="<?= ($bill['status_ketepatan'] === 'Tepat Waktu') ? 'text-success' : 'text-danger' ?>">
