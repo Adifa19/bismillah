@@ -3,6 +3,15 @@ import sys
 import os
 import re
 import json
+from pathlib import Path
+
+# Paksa semua direktori ke /tmp
+os.environ['EASYOCR_MODULE_PATH'] = '/tmp/easyocr_model'
+os.environ['EASYOCR_USER_NETWORK_DIRECTORY'] = '/tmp/easyocr_model/user_network'
+
+# Pastikan direktori bisa ditulis
+Path('/tmp/easyocr_model').mkdir(parents=True, exist_ok=True)
+Path('/tmp/easyocr_model/user_network').mkdir(parents=True, exist_ok=True)
 
 # Ambil path gambar dari argumen
 if len(sys.argv) < 2:
@@ -15,7 +24,7 @@ if not os.path.exists(image_path):
     print(json.dumps({"error": "File not found."}))
     sys.exit()
 
-# ✅ Inisialisasi EasyOCR dengan folder model aman
+# Inisialisasi EasyOCR
 reader = easyocr.Reader(['id', 'en'], gpu=False, model_storage_directory='/tmp/easyocr_model')
 
 # Jalankan OCR
@@ -24,9 +33,10 @@ filtered_text = ' '.join([res[1] for res in results if len(res[1].strip()) > 1])
 
 # Normalisasi teks
 normalized = filtered_text.replace('oo', '00').replace('O', '0').replace('o', '0')
-normalized = normalized.replace(',', '.').replace('  ', ' ')
+normalized = normalized.replace(',', '.')
+normalized = normalized.replace('  ', ' ')
 
-# Ekstrak jumlah uang (Rp atau angka besar saja)
+# Ekstrak jumlah uang
 jumlah = None
 jumlah_match = re.search(r'Rp\s?[\d.]+', normalized, re.IGNORECASE)
 if jumlah_match:
@@ -39,12 +49,10 @@ else:
 # Ekstrak tanggal
 tanggal = None
 tanggal_match = re.search(r'\b\d{1,2}\s+(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des)[a-z]*\s+\d{4}\b', normalized, re.IGNORECASE)
+if not tanggal_match:
+    tanggal_match = re.search(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b', normalized)
 if tanggal_match:
     tanggal = tanggal_match.group(0)
-else:
-    tanggal_match = re.search(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b', normalized)
-    if tanggal_match:
-        tanggal = tanggal_match.group(0)
 
 # Ekstrak kode tagihan
 kode_tagihan = None
