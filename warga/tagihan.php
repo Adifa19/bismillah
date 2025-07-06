@@ -741,7 +741,7 @@ $bills = $stmt->fetchAll();
                     <i class="fas fa-file-invoice-dollar"></i>
                     Tagihan Warga
                 </h1>
-                <p>Kelola pembayaran tagihan komunitas Anda</p>
+                <p>Kelola pembayaran tagihan Anda</p>
             </div>
             <div class="nav-tabs-container">
                 <a href="tagihan.php" class="nav-tab active">
