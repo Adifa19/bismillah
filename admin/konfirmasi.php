@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
         $last_json_start = strrpos($output, '{');
         if ($last_json_start !== false) {
             $json_string = substr($output, $last_json_start);
+            file_put_contents(__DIR__ . '/ocr_debug_json.txt', $json_string); // untuk debug
             $result = json_decode($json_string, true);
         } else {
             $result = null;
