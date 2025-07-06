@@ -11,49 +11,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
     $bill = $stmt->fetch();
 
     if ($bill && $bill['bukti_pembayaran']) {
-        $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
-        $ocr_script_path = __DIR__ . '/ocr.py';
+        $image_path = realpath('../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran']);
+        $ocr_script_path = realpath(__DIR__ . '/ocr.py');
 
-        $env = 'HOME=/tmp';
-        $command = "$env python3 ../ocr.py " 
-         . escapeshellarg($image_path) . " " 
-         . escapeshellarg($bill['kode_tagihan']) . " " 
-         . escapeshellarg($bill['jumlah']);
-
-       $output = shell_exec($command . ' 2>&1');
-
-// Tambahkan pengecekan output dan buat file log aman
-if (trim($output) === '') {
-    file_put_contents(__DIR__ . '/ocr_debug.txt', "⚠️ Tidak ada output dari shell_exec()\nCommand: $command\n");
-} else {
-    file_put_contents(__DIR__ . '/ocr_debug.txt', $output);
-}
-
-
-        // Simpan hasil debug ke file
-        file_put_contents(__DIR__ . '/ocr_debug.txt', $output);
-
-        // Coba decode hasil JSON dari skrip
-        $result = json_decode($output, true);
-
-        if (is_array($result)) {
-            $ocr_jumlah = $result['jumlah'] ?? null;
-            $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
-            $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] !== '' ? 1 : 0;
-            $ocr_confidence = 0.0;
-            $ocr_details = json_encode([
-                'extracted_text' => $result['extracted_text'] ?? '',
-                'normalized_text' => $result['normalized_text'] ?? '',
-                'extracted_code' => $result['kode_tagihan'] ?? '',
-                'extracted_date' => $result['tanggal'] ?? ''
-            ]);
-
-            $update = $pdo->prepare("UPDATE user_bills SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? WHERE id = ?");
-            $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $user_bill_id]);
-
-            $_SESSION['message'] = '✅ OCR berhasil dijalankan.';
+        if (!$image_path || !file_exists($image_path)) {
+            $_SESSION['message'] = '❌ File bukti pembayaran tidak ditemukan.';
+        } elseif (!$ocr_script_path || !file_exists($ocr_script_path)) {
+            $_SESSION['message'] = '❌ File ocr.py tidak ditemukan.';
         } else {
-            $_SESSION['message'] = '❌ OCR gagal memproses gambar.';
+            $env = 'HOME=/tmp';
+            $command = "$env python3 " . escapeshellarg($ocr_script_path) . " "
+                     . escapeshellarg($image_path) . " "
+                     . escapeshellarg($bill['kode_tagihan']) . " "
+                     . escapeshellarg($bill['jumlah']);
+
+            $output = shell_exec($command . ' 2>&1');
+
+            // Debug log
+            file_put_contents(__DIR__ . '/ocr_debug.txt', $output);
+
+            $result = json_decode($output, true);
+
+            if (is_array($result)) {
+                $ocr_jumlah = $result['jumlah'] ?? null;
+                $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
+                $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] !== '' ? 1 : 0;
+                $ocr_confidence = 0.0; // optional confidence
+                $ocr_details = json_encode([
+                    'extracted_text' => $result['extracted_text'] ?? '',
+                    'normalized_text' => $result['normalized_text'] ?? '',
+                    'extracted_code' => $result['kode_tagihan'] ?? '',
+                    'extracted_date' => $result['tanggal'] ?? ''
+                ]);
+
+                $update = $pdo->prepare("UPDATE user_bills SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? WHERE id = ?");
+                $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $user_bill_id]);
+
+                $_SESSION['message'] = '✅ OCR berhasil dijalankan.';
+            } else {
+                $_SESSION['message'] = '❌ OCR gagal memproses gambar.';
+            }
         }
     } else {
         $_SESSION['message'] = '❌ Data tagihan tidak valid atau tidak ada bukti pembayaran.';
@@ -129,10 +126,12 @@ $bills = $stmt->fetchAll();
                             <em>Belum diproses OCR</em>
                         <?php endif; ?>
 
+                        <?php if (!$bill['ocr_jumlah']): ?>
                         <form method="POST" class="mt-2">
                             <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
                             <button name="run_ocr" class="btn btn-sm btn-warning">🔍 Jalankan OCR</button>
                         </form>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <form method="POST" action="proses_konfirmasi.php">
