@@ -14,8 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
         $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
         $ocr_script_path = __DIR__ . '/ocr.py';
 
-        // Jalankan ocr.py dengan shell_exec, tangkap error juga
-        $command = escapeshellcmd("python3 $ocr_script_path " . escapeshellarg($image_path)) . " 2>&1";
+        $env = 'HOME=/tmp';
+        $command = "$env python3 ../ocr.py " 
+         . escapeshellarg($image_path) . " " 
+         . escapeshellarg($bill['kode_tagihan']) . " " 
+         . escapeshellarg($bill['jumlah']);
+
        $output = shell_exec($command . ' 2>&1');
 
 // Tambahkan pengecekan output dan buat file log aman
