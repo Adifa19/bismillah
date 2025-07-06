@@ -1,138 +1,135 @@
 <?php
 require_once '../config.php';
+require_once '../functions.php';
 requireAdmin();
 
-// Jalankan OCR jika tombol ditekan
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'])) {
-    $user_bill_id = (int) $_POST['user_bill_id'];
-
-    $stmt = $pdo->prepare("SELECT ub.*, b.kode_tagihan, b.jumlah 
-        FROM user_bills ub 
-        JOIN bills b ON ub.bill_id = b.id 
-        WHERE ub.id = ?");
+// Jalankan OCR jika diminta
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($_POST['user_bill_id'])) {
+    $user_bill_id = (int)$_POST['user_bill_id'];
+    $stmt = $pdo->prepare("SELECT ub.*, b.kode_tagihan, b.jumlah FROM user_bills ub JOIN bills b ON ub.bill_id = b.id WHERE ub.id = ?");
     $stmt->execute([$user_bill_id]);
     $bill = $stmt->fetch();
 
     if ($bill && $bill['bukti_pembayaran']) {
         $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
-        $kode_tagihan = escapeshellarg($bill['kode_tagihan']);
-        $jumlah = escapeshellarg($bill['jumlah']);
-        $escaped_image = escapeshellarg($image_path);
-
-        $command = "python3 ocr.py $escaped_image $kode_tagihan $jumlah";
+        $command = escapeshellcmd("python3 ../ocr.py " . escapeshellarg($image_path) . " " . escapeshellarg($bill['kode_tagihan']) . " " . escapeshellarg($bill['jumlah']));
         $output = shell_exec($command);
-        $ocr_result = json_decode($output, true);
 
-        if ($ocr_result) {
-            $ocr_jumlah = (int) ($ocr_result['jumlah'] ?? 0);
-            $ocr_kode_found = isset($ocr_result['kode_tagihan']);
-            $ocr_date_found = isset($ocr_result['tanggal']);
-            $ocr_confidence = 90.0; // Sementara static, bisa ganti nanti
-            $ocr_details = json_encode([
-                'extracted_text' => $ocr_result['extracted_text'] ?? '',
-                'normalized_text' => $ocr_result['normalized_text'] ?? '',
-                'extracted_code' => $ocr_result['kode_tagihan'] ?? '',
-                'extracted_date' => $ocr_result['tanggal'] ?? '',
-            ]);
+        if ($output) {
+            $result = json_decode($output, true);
+            if ($result) {
+                $ocr_jumlah = $result['jumlah'] ?? null;
+                $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] != '' ? 1 : 0;
+                $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] != '' ? 1 : 0;
+                $ocr_confidence = $result['confidence'] ?? 0.0;
+                $ocr_details = json_encode([
+                    'extracted_text' => $result['extracted_text'] ?? '',
+                    'normalized_text' => $result['normalized_text'] ?? '',
+                    'extracted_code' => $result['kode_tagihan'] ?? '',
+                    'extracted_date' => $result['tanggal'] ?? ''
+                ]);
 
-            $update = $pdo->prepare("UPDATE user_bills SET 
-                ocr_jumlah = ?, 
-                ocr_kode_found = ?, 
-                ocr_date_found = ?, 
-                ocr_confidence = ?, 
-                ocr_details = ? 
-                WHERE id = ?");
-            $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $user_bill_id]);
+                $update = $pdo->prepare("UPDATE user_bills SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? WHERE id = ?");
+                $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $user_bill_id]);
+
+                $_SESSION['message'] = 'OCR berhasil dijalankan';
+            } else {
+                $_SESSION['message'] = 'OCR gagal memproses gambar';
+            }
+        } else {
+            $_SESSION['message'] = 'Gagal menjalankan skrip OCR';
         }
+    } else {
+        $_SESSION['message'] = 'Data tagihan tidak valid atau tidak ada bukti pembayaran';
     }
+    header('Location: konfirmasi.php');
+    exit;
 }
 
-// Ambil semua tagihan yang menunggu konfirmasi
-$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_kirim, u.username 
+// Ambil tagihan yang menunggu konfirmasi
+$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username
     FROM user_bills ub
     JOIN bills b ON ub.bill_id = b.id
     JOIN users u ON ub.user_id = u.id
-    WHERE ub.status = 'menunggu_konfirmasi'");
+    WHERE ub.status = 'menunggu_konfirmasi'
+    ORDER BY ub.tanggal_upload DESC");
 $bills = $stmt->fetchAll();
-
-function format_tgl($tgl) {
-    return date('d M Y', strtotime($tgl));
-}
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
     <title>Konfirmasi Pembayaran</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="p-4">
-<h2>Daftar Pembayaran Menunggu Konfirmasi</h2>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>User</th>
-            <th>Kode Tagihan</th>
-            <th>Jumlah</th>
-            <th>Deskripsi</th>
-            <th>Upload</th>
-            <th>OCR</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-    <?php foreach ($bills as $bill): ?>
-        <tr>
-            <td><?= htmlspecialchars($bill['username']) ?></td>
-            <td><?= htmlspecialchars($bill['kode_tagihan']) ?></td>
-            <td>Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></td>
-            <td><?= htmlspecialchars($bill['deskripsi']) ?></td>
-            <td>
-                <?php if ($bill['bukti_pembayaran']): ?>
-                    <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" width="100">
-                <?php else: ?>
-                    <span class="text-muted">Tidak ada</span>
-                <?php endif; ?>
-            </td>
-            <td>
-                <?php if ($bill['ocr_jumlah']): ?>
-                    Rp <?= number_format($bill['ocr_jumlah'], 0, ',', '.') ?>
-                    <br><small><?= $bill['ocr_details'] ? json_decode($bill['ocr_details'], true)['extracted_date'] ?? '' : '' ?></small>
-                <?php else: ?>
-                    <form method="POST">
-                        <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                        <button name="run_ocr" class="btn btn-sm btn-warning">Jalankan OCR</button>
-                    </form>
-                <?php endif; ?>
-            </td>
-            <td>
-                <form method="POST">
-                    <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                    <select name="status" class="form-select form-select-sm" required>
-                        <option value="">Pilih</option>
-                        <option value="konfirmasi">✓ Konfirmasi</option>
-                        <option value="tolak">✗ Tolak</option>
-                    </select>
-                    <button type="submit" name="action" value="update_status" class="btn btn-sm btn-success mt-1">Simpan</button>
-                </form>
-            </td>
-        </tr>
-    <?php endforeach; ?>
-    </tbody>
-</table>
+<body class="container py-4">
+    <h2>Daftar Pembayaran Menunggu Konfirmasi</h2>
+
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="alert alert-info"> <?= $_SESSION['message']; unset($_SESSION['message']); ?> </div>
+    <?php endif; ?>
+
+    <table class="table table-bordered table-hover mt-4">
+        <thead class="table-light">
+            <tr>
+                <th>Username</th>
+                <th>Kode Tagihan</th>
+                <th>Jumlah</th>
+                <th>Deskripsi</th>
+                <th>Bukti</th>
+                <th>Ekstrak OCR</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($bills as $bill): ?>
+                <tr>
+                    <td><?= htmlspecialchars($bill['username']) ?></td>
+                    <td><?= htmlspecialchars($bill['kode_tagihan']) ?></td>
+                    <td>Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></td>
+                    <td><?= nl2br(htmlspecialchars($bill['deskripsi'])) ?></td>
+                    <td>
+                        <?php if ($bill['bukti_pembayaran']): ?>
+                            <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" width="120">
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if ($bill['ocr_jumlah']): ?>
+                            <strong>Jumlah:</strong> Rp <?= number_format($bill['ocr_jumlah'], 0, ',', '.') ?><br>
+                            <?php
+                            $ocr_details = json_decode($bill['ocr_details'], true);
+                            ?>
+                            <?php if ($ocr_details): ?>
+                                <strong>Kode:</strong> <?= htmlspecialchars($ocr_details['extracted_code'] ?? '-') ?><br>
+                                <strong>Tanggal:</strong> <?= htmlspecialchars($ocr_details['extracted_date'] ?? '-') ?><br>
+                                <strong>OCR:</strong><br>
+                                <small style="font-size: 0.8em; color: #555;">
+                                    <?= nl2br(htmlspecialchars($ocr_details['extracted_text'] ?? '')) ?>
+                                </small>
+                            <?php else: ?>
+                                <em>Tidak ada detail</em>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <form method="POST">
+                                <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                                <button name="run_ocr" class="btn btn-sm btn-warning">Jalankan OCR</button>
+                            </form>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <form method="POST" action="proses_konfirmasi.php">
+                            <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                            <select name="status" class="form-select mb-2">
+                                <option value="konfirmasi">Konfirmasi</option>
+                                <option value="tolak">Tolak</option>
+                            </select>
+                            <button class="btn btn-success btn-sm" onclick="return confirm('Yakin?')">Proses</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </body>
 </html>
-
-<?php
-// Proses perubahan status
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
-    $status = $_POST['status'];
-    $user_bill_id = (int) $_POST['user_bill_id'];
-
-    $update = $pdo->prepare("UPDATE user_bills SET status = ? WHERE id = ?");
-    $update->execute([$status, $user_bill_id]);
-
-    header("Location: konfirmasi.php");
-    exit;
-}
-?>
