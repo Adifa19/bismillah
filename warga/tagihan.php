@@ -162,7 +162,7 @@ if (isset($_POST['action'])) {
 
     // Validasi upload file
     if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] != 0) {
-        throw new Exception('File bukti pembayaran tidak ditemukan');
+        throw new Exception('File bukti pembayaran tidak ditemukan atau gagal diupload');
     }
 
     $file = $_FILES['bukti_pembayaran'];
@@ -176,10 +176,17 @@ if (isset($_POST['action'])) {
         throw new Exception('Ukuran file terlalu besar. Maksimal 5MB');
     }
 
-    // Buat direktori upload jika belum ada
+    // Path upload absolut berdasarkan direktori file ini
     $upload_dir = __DIR__ . '/uploads/bukti_pembayaran/';
     if (!is_dir($upload_dir)) {
-        mkdir($upload_dir, 0755, true);
+        if (!mkdir($upload_dir, 0755, true)) {
+            throw new Exception('Gagal membuat direktori upload');
+        }
+    }
+
+    // Pastikan folder bisa ditulis
+    if (!is_writable($upload_dir)) {
+        throw new Exception('Folder upload tidak bisa ditulis. Periksa permission.');
     }
 
     // Generate nama file unik
@@ -187,15 +194,12 @@ if (isset($_POST['action'])) {
     $file_name = 'bukti_' . $user_bill_id . '_' . time() . '.' . $file_ext;
     $file_path = $upload_dir . $file_name;
 
-    // Upload file ke server
+    // Upload file
     if (!move_uploaded_file($file['tmp_name'], $file_path)) {
-        throw new Exception('Gagal mengupload file ke server. Pastikan permission folder uploads sesuai.');
+        throw new Exception('Gagal mengupload file ke server. Cek permission folder uploads');
     }
 
-    // Simpan path relatif ke database (untuk digunakan di <img src=""> dll)
-    $db_file_path = 'uploads/bukti_pembayaran/' . $file_name;
-
-    // Update database
+    // Simpan hanya nama file ke database
     $stmt = $pdo->prepare("
         UPDATE user_bills 
         SET bukti_pembayaran = ?, 
@@ -203,14 +207,13 @@ if (isset($_POST['action'])) {
             status = 'menunggu_konfirmasi'
         WHERE id = ?
     ");
-    $stmt->execute([$db_file_path, $user_bill_id]);
+    $stmt->execute([$file_name, $user_bill_id]);
 
     echo json_encode([
         'status' => 'success',
         'message' => 'Bukti pembayaran berhasil diupload'
     ]);
     break;
-
 
             default:
                 throw new Exception('Action tidak valid');
