@@ -158,56 +158,74 @@ if (isset($_POST['action'])) {
                 break;
                 
             case 'upload_bukti':
-                $user_bill_id = $_POST['user_bill_id'];
-                
-                // Validasi upload file
-                if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] != 0) {
-                    throw new Exception('File bukti pembayaran tidak ditemukan');
-                }
-                
-                $file = $_FILES['bukti_pembayaran'];
-                $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
-                
-                if (!in_array($file['type'], $allowed_types)) {
-                    throw new Exception('Tipe file tidak diizinkan. Gunakan JPG, JPEG, atau PNG');
-                }
-                
-                if ($file['size'] > 5 * 1024 * 1024) { // 5MB
-                    throw new Exception('Ukuran file terlalu besar. Maksimal 5MB');
-                }
-                
-                // Buat direktori upload jika belum ada
-                $upload_dir = 'uploads/bukti_pembayaran/';
-                if (!is_dir($upload_dir)) {
-                    mkdir($upload_dir, 0755, true);
-                }
-                
-                // Generate nama file unik
-                $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $file_name = 'bukti_' . $user_bill_id . '_' . time() . '.' . $file_ext;
-                $file_path = $upload_dir . $file_name;
-                
-                // Upload file
-                if (!move_uploaded_file($file['tmp_name'], $file_path)) {
-                    throw new Exception('Gagal mengupload file');
-                }
-                
-                // Update database
-                $stmt = $pdo->prepare("
-                    UPDATE user_bills 
-                    SET bukti_pembayaran = ?, 
-                        tanggal_upload = NOW(), 
-                        status = 'menunggu_konfirmasi'
-                    WHERE id = ?
-                ");
-                $stmt->execute([$file_name, $user_bill_id]);
-                
-                echo json_encode([
-                    'status' => 'success',
-                    'message' => 'Bukti pembayaran berhasil diupload'
-                ]);
-                break;
-                
+    $user_bill_id = $_POST['user_bill_id'];
+
+    // Validasi upload file
+    if (!isset($_FILES['bukti_pembayaran'])) {
+        throw new Exception('File bukti pembayaran tidak dikirim.');
+    }
+
+    $file = $_FILES['bukti_pembayaran'];
+
+    // Cek error upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $error_messages = [
+            UPLOAD_ERR_INI_SIZE   => 'Ukuran file melebihi batas php.ini.',
+            UPLOAD_ERR_FORM_SIZE  => 'Ukuran file melebihi batas form.',
+            UPLOAD_ERR_PARTIAL    => 'File hanya terupload sebagian.',
+            UPLOAD_ERR_NO_FILE    => 'Tidak ada file yang diupload.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary tidak tersedia.',
+            UPLOAD_ERR_CANT_WRITE => 'Gagal menulis file ke disk.',
+            UPLOAD_ERR_EXTENSION  => 'Ekstensi PHP menghentikan upload.',
+        ];
+        $err = $error_messages[$file['error']] ?? 'Terjadi kesalahan saat upload.';
+        throw new Exception("Upload gagal: $err");
+    }
+
+    $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!in_array($file['type'], $allowed_types)) {
+        throw new Exception('Tipe file tidak diizinkan. Gunakan JPG, JPEG, atau PNG.');
+    }
+
+    if ($file['size'] > 5 * 1024 * 1024) {
+        throw new Exception('Ukuran file terlalu besar. Maksimal 5MB.');
+    }
+
+    // Buat direktori upload jika belum ada
+    $upload_dir = __DIR__ . '/uploads/bukti_pembayaran/';
+    if (!is_dir($upload_dir)) {
+        if (!mkdir($upload_dir, 0755, true)) {
+            throw new Exception('Gagal membuat folder upload.');
+        }
+    }
+
+    // Generate nama file unik
+    $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $file_name = 'bukti_' . $user_bill_id . '_' . time() . '.' . $file_ext;
+    $file_path = $upload_dir . $file_name;
+
+    // Upload file
+    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+        error_log("Gagal move_uploaded_file: TMP=" . $file['tmp_name'] . ", DEST=" . $file_path);
+        throw new Exception('Gagal mengupload file. Cek permission folder uploads.');
+    }
+
+    // Simpan hanya nama file di database
+    $stmt = $pdo->prepare("
+        UPDATE user_bills 
+        SET bukti_pembayaran = ?, 
+            tanggal_upload = NOW(), 
+            status = 'menunggu_konfirmasi'
+        WHERE id = ?
+    ");
+    $stmt->execute([$file_name, $user_bill_id]);
+
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Bukti pembayaran berhasil diupload'
+    ]);
+    break;
+
             default:
                 throw new Exception('Action tidak valid');
         }
