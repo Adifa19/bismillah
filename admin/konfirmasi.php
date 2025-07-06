@@ -22,19 +22,19 @@ function format_tanggal_indo($tanggal) {
 }
 
 // Handle konfirmasi/tolak tagihan
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['user_bill_id'])) {
+// Handle konfirmasi/tolak tagihan
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status' && isset($_POST['status'], $_POST['user_bill_id'])) {
+
     $user_bill_id = (int)$_POST['user_bill_id'];
     $new_status = $_POST['status'];
-    
-    // Validasi status
+
     if (!in_array($new_status, ['konfirmasi', 'tolak'])) {
         $_SESSION['message'] = '❌ Status tidak valid.';
         header('Location: konfirmasi.php');
         exit;
     }
-    
+
     try {
-        // Ambil data tagihan untuk validasi
         $stmt = $pdo->prepare("SELECT ub.*, b.kode_tagihan, b.jumlah, u.username 
                                FROM user_bills ub 
                                JOIN bills b ON ub.bill_id = b.id 
@@ -42,18 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['use
                                WHERE ub.id = ? AND ub.status = 'menunggu_konfirmasi'");
         $stmt->execute([$user_bill_id]);
         $bill = $stmt->fetch();
-        
+
         if (!$bill) {
             $_SESSION['message'] = '❌ Tagihan tidak ditemukan atau sudah diproses.';
             header('Location: konfirmasi.php');
             exit;
         }
-        
-        // Update status tagihan
-        $stmt = $pdo->prepare("UPDATE user_bills SET status = ? WHERE id = ?");
-        $stmt->execute([$new_status, $user_bill_id]);
-        
-        // Jika dikonfirmasi, simpan ke tabel tagihan_oke
+
+        $pdo->prepare("UPDATE user_bills SET status = ? WHERE id = ?")->execute([$new_status, $user_bill_id]);
+
         if ($new_status === 'konfirmasi') {
             $stmt = $pdo->prepare("INSERT INTO tagihan_oke (user_bill_id, kode_tagihan, jumlah, tanggal, user_id, qr_code_hash, bukti_pembayaran) 
                                    VALUES (?, ?, ?, CURDATE(), ?, ?, ?)");
@@ -65,16 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['use
                 $bill['qr_code_hash'],
                 $bill['bukti_pembayaran']
             ]);
-            
             $_SESSION['message'] = "✅ Pembayaran dari {$bill['username']} untuk tagihan {$bill['kode_tagihan']} berhasil dikonfirmasi.";
         } else {
             $_SESSION['message'] = "❌ Pembayaran dari {$bill['username']} untuk tagihan {$bill['kode_tagihan']} ditolak.";
         }
-        
     } catch (PDOException $e) {
         $_SESSION['message'] = '❌ Terjadi kesalahan: ' . $e->getMessage();
     }
-    
     header('Location: konfirmasi.php');
     exit;
 }
@@ -764,24 +758,34 @@ function checkOCRMatch($bill) {
                                                     </form>
                                                 <?php endif; ?>
                                                 
-                                                <!-- Konfirmasi/Tolak Form -->
-                                                <form method="POST" style="display: inline;">
-                                                    <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                                                    <div class="d-flex gap-1">
-                                                        <button type="submit" name="status" value="konfirmasi" 
-                                                                class="btn btn-sm <?= $is_suitable ? 'btn-success' : 'btn-outline-success' ?>" 
-                                                                title="Konfirmasi Pembayaran"
-                                                                onclick="return confirm('Yakin ingin mengkonfirmasi pembayaran ini?')">
+                                                <!-- Dalam loop foreach ($bills as $bill) -->
+                                                <div class="d-flex gap-2">
+                                                    <!-- Tombol Konfirmasi -->
+                                                    <form method="POST" action="konfirmasi.php" class="d-inline">
+                                                        <input type="hidden" name="user_bill_id" value="<?= htmlspecialchars($bill['id']) ?>">
+                                                        <input type="hidden" name="action" value="update_status">
+                                                        <input type="hidden" name="status" value="konfirmasi">
+                                                        <button type="submit" class="btn btn-sm btn-outline-success"
+                                                                onclick="return confirm('Yakin ingin konfirmasi pembayaran ini?')">
                                                             <i class="fas fa-check"></i>
                                                         </button>
-                                                        <button type="submit" name="status" value="tolak" 
-                                                                class="btn btn-sm btn-outline-danger" 
-                                                                title="Tolak Pembayaran"
+                                                    </form>
+
+                                                    <!-- Tombol Tolak -->
+                                                    <form method="POST" action="konfirmasi.php" class="d-inline">
+                                                        <input type="hidden" name="user_bill_id" value="<?= htmlspecialchars($bill['id']) ?>">
+                                                        <input type="hidden" name="action" value="update_status">
+                                                        <input type="hidden" name="status" value="tolak">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
                                                                 onclick="return confirm('Yakin ingin menolak pembayaran ini?')">
                                                             <i class="fas fa-times"></i>
                                                         </button>
-                                                    </div>
-                                                </form>
+                                                    </form>
+                                                </div>
+
+
+
+
                                             </div>
                                         </td>
                                     </tr>
@@ -870,82 +874,83 @@ function checkOCRMatch($bill) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JavaScript -->
-    <script>
-        // Auto-hide alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                setTimeout(function() {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }, 5000);
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Auto-hide alerts after 5 seconds
+        document.querySelectorAll('.alert').forEach(function (alert) {
+            setTimeout(function () {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+
+        // 2. Enhanced image modal functionality (zoom on click)
+        document.querySelectorAll('[id^="imageModal"]').forEach(function (modal) {
+            modal.addEventListener('shown.bs.modal', function () {
+                const img = modal.querySelector('img');
+                if (img) {
+                    img.style.cursor = 'zoom-in';
+                    img.onclick = function () {
+                        if (img.style.transform === 'scale(1.5)') {
+                            img.style.transform = 'scale(1)';
+                            img.style.cursor = 'zoom-in';
+                        } else {
+                            img.style.transform = 'scale(1.5)';
+                            img.style.cursor = 'zoom-out';
+                        }
+                    };
+                }
             });
         });
 
-        // Enhanced image modal functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const imageModals = document.querySelectorAll('[id^="imageModal"]');
-            imageModals.forEach(function(modal) {
-                modal.addEventListener('shown.bs.modal', function() {
-                    const img = modal.querySelector('img');
-                    if (img) {
-                        // Add zoom functionality
-                        img.style.cursor = 'zoom-in';
-                        img.addEventListener('click', function() {
-                            if (img.style.transform === 'scale(1.5)') {
-                                img.style.transform = 'scale(1)';
-                                img.style.cursor = 'zoom-in';
-                            } else {
-                                img.style.transform = 'scale(1.5)';
-                                img.style.cursor = 'zoom-out';
-                            }
-                        });
+        // 3. Form submit loading state
+        document.querySelectorAll('form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    const originalHTML = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+                    // Fallback: re-enable button after 3s
+                    setTimeout(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalHTML;
+                    }, 3000);
+                }
+            });
+        });
+
+        // 4. Auto-submit on checkbox konfirmasi
+        document.querySelectorAll('.confirm-checkbox').forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                const billId = this.getAttribute('data-bill-id');
+                const form = document.getElementById('form-konfirmasi-' + billId);
+                if (this.checked && form) {
+                    if (confirm('Yakin ingin mengkonfirmasi pembayaran ini?')) {
+                        form.submit();
+                    } else {
+                        this.checked = false;
                     }
-                });
+                }
             });
         });
 
-        // Confirmation dialogs with enhanced UX
-        function confirmAction(action, billCode, username) {
-            const actionText = action === 'konfirmasi' ? 'mengkonfirmasi' : 'menolak';
-            const message = `Yakin ingin ${actionText} pembayaran dari ${username} untuk tagihan ${billCode}?`;
-            return confirm(message);
-        }
-
-        // Add loading state to buttons
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(function(form) {
-                form.addEventListener('submit', function(e) {
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                        const originalText = submitBtn.innerHTML;
-                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-                        
-                        // Re-enable button after 3 seconds as fallback
-                        setTimeout(function() {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalText;
-                        }, 3000);
-                    }
-                });
-            });
-        });
-
-        // Real-time status updates (if needed)
-        function refreshPage() {
-            window.location.reload();
-        }
-
-        // Add keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+R to refresh
+        // 5. Keyboard shortcut Ctrl+R to refresh
+        document.addEventListener('keydown', function (e) {
             if (e.ctrlKey && e.key === 'r') {
                 e.preventDefault();
-                refreshPage();
+                window.location.reload();
             }
         });
-    </script>
+    });
+
+    // 6. Dynamic confirmation (if you use it from PHP inline)
+    function confirmAction(action, billCode, username) {
+        const actionText = action === 'konfirmasi' ? 'mengkonfirmasi' : 'menolak';
+        return confirm(`Yakin ingin ${actionText} pembayaran dari ${username} untuk tagihan ${billCode}?`);
+    }
+</script>
+
 </body>
 </html>
