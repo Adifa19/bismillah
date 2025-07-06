@@ -112,10 +112,6 @@ $bills = $stmt->fetchAll();
                             <strong>Jumlah:</strong> Rp <?= number_format($bill['ocr_jumlah'] ?? 0, 0, ',', '.') ?><br>
                             <strong>Kode:</strong> <?= htmlspecialchars($ocr_details['extracted_code'] ?? '-') ?><br>
                             <strong>Tanggal:</strong> <?= htmlspecialchars($ocr_details['extracted_date'] ?? '-') ?><br>
-                            <strong>OCR:</strong><br>
-                            <small style="font-size: 0.8em; color: #555;">
-                                <?= nl2br(htmlspecialchars($ocr_details['extracted_text'] ?? '')) ?>
-                            </small>
                         <?php else: ?>
                             <em>Belum diproses OCR</em>
                         <?php endif; ?>
