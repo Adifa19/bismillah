@@ -25,20 +25,36 @@ filtered_text = ' '.join([res[1] for res in results if len(res[1].strip()) > 1])
 # Normalisasi teks
 normalized = filtered_text.replace('oo', '00').replace('O', '0').replace('o', '0')
 normalized = normalized.replace(',', '.')
+normalized = normalized.replace('  ', ' ')
 
-# Ekstrak jumlah
-jumlah_match = re.search(r'\b\d{1,3}(?:[.\s]?\d{3})*(?:\.\d+)?\b', normalized)
-jumlah = jumlah_match.group(0) if jumlah_match else None
+# Ekstrak jumlah uang (Rp atau angka besar saja)
+jumlah = None
+jumlah_match = re.search(r'Rp\s?[\d.]+', normalized, re.IGNORECASE)
+if jumlah_match:
+    jumlah = re.sub(r'[^\d]', '', jumlah_match.group(0))  # Ambil angka saja
+else:
+    # Fallback: cari angka besar tanpa awalan Rp
+    fallback_jumlah = re.findall(r'\b\d{4,}\b', normalized)
+    if fallback_jumlah:
+        jumlah = fallback_jumlah[0]
 
 # Ekstrak tanggal
-tanggal_match = re.search(r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b', normalized)
-if not tanggal_match:
-    tanggal_match = re.search(r'\b\d{1,2}\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+\d{4}\b', normalized, re.IGNORECASE)
-tanggal = tanggal_match.group(0) if tanggal_match else None
+tanggal = None
+# Format: 27 Jun 2025
+tanggal_match = re.search(r'\b\d{1,2}\s+(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des)[a-z]*\s+\d{4}\b', normalized, re.IGNORECASE)
+if tanggal_match:
+    tanggal = tanggal_match.group(0)
+else:
+    # Format alternatif: 27/06/2025 atau 27-06-2025
+    tanggal_match = re.search(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b', normalized)
+    if tanggal_match:
+        tanggal = tanggal_match.group(0)
 
-# Ekstrak kode tagihan
-kode_match = re.search(r'TAG[-\s]?\d{6,10}[-\s]?\d{1,3}', normalized, re.IGNORECASE)
-kode_tagihan = kode_match.group(0).replace(' ', '').upper() if kode_match else None
+# Ekstrak kode tagihan: TAG-xxxxx-xx (lebih fleksibel)
+kode_tagihan = None
+kode_match = re.search(r'TAG[-_\s]?\d{4,6}[-_\s]?\d{1,3}', normalized, re.IGNORECASE)
+if kode_match:
+    kode_tagihan = kode_match.group(0).replace(' ', '').replace('_', '-').upper()
 
 # Output JSON
 output = {
