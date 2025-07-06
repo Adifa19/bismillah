@@ -109,7 +109,10 @@ $stats = [
 ];
 
 // Ambil tagihan menunggu konfirmasi dengan semua data yang diperlukan
-$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username,
+$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, 
+    ub.tanggal as tanggal_kirim,
+    b.tanggal as tenggat,
+    u.username,
     CASE 
         WHEN ub.tanggal_upload IS NULL THEN 'Belum Upload'
         WHEN ub.tanggal_upload <= b.tenggat_waktu THEN 'Tepat Waktu'
@@ -439,6 +442,14 @@ function checkOCRMatch($bill) {
                                     <div class="small">
                                         <strong>Tenggat:</strong><br>
                                         <?= date('d M Y', strtotime($bill['tenggat_waktu'])) ?><br>
+                                        <strong>Terkirim:</strong><br>
+                                        <?php if ($bill['tanggal_kirim']): ?>
+                                            <span class="text-info">
+                                                <?= date('d M Y', strtotime($bill['tanggal_kirim'])) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-muted">Belum terkirim</span>
+                                        <?php endif; ?><br>
                                         <strong>Upload:</strong><br>
                                         <?php if ($bill['tanggal_upload']): ?>
                                             <span class="<?= ($bill['status_ketepatan'] === 'Tepat Waktu') ? 'text-success' : 'text-danger' ?>">
