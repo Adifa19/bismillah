@@ -2,28 +2,28 @@
 require_once '../config.php';
 requireAdmin();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($_POST['user_bill_id'])) {
+// Jalankan OCR jika diminta
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['user_bill_id'])) {
     $user_bill_id = (int)$_POST['user_bill_id'];
+
+    // Ambil data tagihan dan file bukti
     $stmt = $pdo->prepare("SELECT ub.*, b.kode_tagihan, b.jumlah FROM user_bills ub JOIN bills b ON ub.bill_id = b.id WHERE ub.id = ?");
     $stmt->execute([$user_bill_id]);
     $bill = $stmt->fetch();
 
     if ($bill && $bill['bukti_pembayaran']) {
-        // Real path untuk keamanan dan keakuratan
-        $image_path = realpath('../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran']);
-        $ocr_script = __DIR__ . '/ocr.py';
+        $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
+        $command = escapeshellcmd("python3 ocr.py " . escapeshellarg($image_path));
+        $output = shell_exec($command);
 
-        // Pastikan file ada
-        if (file_exists($image_path) && file_exists($ocr_script)) {
-            $command = "/usr/bin/python3 " . escapeshellarg($ocr_script) . " " . escapeshellarg($image_path) . " 2>&1";
-            $output = shell_exec($command);
-
+        if ($output) {
             $result = json_decode($output, true);
-            if ($result) {
+
+            if (is_array($result)) {
                 $ocr_jumlah = $result['jumlah'] ?? null;
-                $ocr_kode_found = !empty($result['kode_tagihan']) ? 1 : 0;
-                $ocr_date_found = !empty($result['tanggal']) ? 1 : 0;
-                $ocr_confidence = $result['confidence'] ?? 0.0;
+                $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
+                $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] !== '' ? 1 : 0;
+                $ocr_confidence = 0.0; // EasyOCR tidak kasih confidence langsung
                 $ocr_details = json_encode([
                     'extracted_text' => $result['extracted_text'] ?? '',
                     'normalized_text' => $result['normalized_text'] ?? '',
@@ -36,28 +36,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($
 
                 $_SESSION['message'] = '✅ OCR berhasil dijalankan.';
             } else {
-                $_SESSION['message'] = '❌ OCR gagal memproses gambar.<br><pre>' . htmlspecialchars($output) . '</pre>';
+                $_SESSION['message'] = '❌ OCR gagal memproses gambar.';
             }
         } else {
-            $_SESSION['message'] = '❌ File gambar atau skrip OCR tidak ditemukan.';
+            $_SESSION['message'] = '❌ Gagal menjalankan skrip OCR.';
         }
     } else {
-        $_SESSION['message'] = '❌ Data tidak valid atau bukti pembayaran kosong.';
+        $_SESSION['message'] = '❌ Data tagihan tidak valid atau tidak ada bukti pembayaran.';
     }
 
     header('Location: konfirmasi.php');
     exit;
 }
 
-// Ambil ulang data tagihan
-$stmt = $pdo->query("
-    SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username
+// Ambil data semua tagihan yang menunggu konfirmasi
+$stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah, b.deskripsi, b.tenggat_waktu, b.tanggal AS tanggal_tagihan, u.username
     FROM user_bills ub
     JOIN bills b ON ub.bill_id = b.id
     JOIN users u ON ub.user_id = u.id
     WHERE ub.status = 'menunggu_konfirmasi'
-    ORDER BY ub.tanggal_upload DESC
-");
+    ORDER BY ub.tanggal_upload DESC");
 $bills = $stmt->fetchAll();
 ?>
 
@@ -72,9 +70,7 @@ $bills = $stmt->fetchAll();
     <h2>Daftar Pembayaran Menunggu Konfirmasi</h2>
 
     <?php if (isset($_SESSION['message'])): ?>
-        <div class="alert alert-info">
-            <?= $_SESSION['message']; unset($_SESSION['message']); ?>
-        </div>
+        <div class="alert alert-info"><?= $_SESSION['message']; unset($_SESSION['message']); ?></div>
     <?php endif; ?>
 
     <table class="table table-bordered table-hover mt-4">
@@ -99,12 +95,15 @@ $bills = $stmt->fetchAll();
                     <td>
                         <?php if ($bill['bukti_pembayaran']): ?>
                             <img src="../warga/uploads/bukti_pembayaran/<?= htmlspecialchars($bill['bukti_pembayaran']) ?>" width="120">
+                        <?php else: ?>
+                            <em>Belum upload</em>
                         <?php endif; ?>
                     </td>
                     <td>
-                        <?php
-                        $ocr_details = json_decode($bill['ocr_details'] ?? '', true);
-                        if (!empty($ocr_details)): ?>
+                        <?php if ($bill['ocr_details']): ?>
+                            <?php
+                                $ocr_details = json_decode($bill['ocr_details'], true);
+                            ?>
                             <strong>Jumlah:</strong> Rp <?= number_format($bill['ocr_jumlah'] ?? 0, 0, ',', '.') ?><br>
                             <strong>Kode:</strong> <?= htmlspecialchars($ocr_details['extracted_code'] ?? '-') ?><br>
                             <strong>Tanggal:</strong> <?= htmlspecialchars($ocr_details['extracted_date'] ?? '-') ?><br>
@@ -112,13 +111,12 @@ $bills = $stmt->fetchAll();
                             <small style="font-size: 0.8em; color: #555;">
                                 <?= nl2br(htmlspecialchars($ocr_details['extracted_text'] ?? '')) ?>
                             </small>
-                            <hr>
+                        <?php else: ?>
+                            <form method="POST">
+                                <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+                                <button name="run_ocr" class="btn btn-sm btn-warning">🔍 Jalankan OCR</button>
+                            </form>
                         <?php endif; ?>
-                        <!-- Tombol selalu tampil -->
-                        <form method="POST" style="margin:0;">
-                            <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                            <button name="run_ocr" class="btn btn-sm btn-warning">Jalankan OCR</button>
-                        </form>
                     </td>
                     <td>
                         <form method="POST" action="proses_konfirmasi.php">
@@ -127,7 +125,7 @@ $bills = $stmt->fetchAll();
                                 <option value="konfirmasi">Konfirmasi</option>
                                 <option value="tolak">Tolak</option>
                             </select>
-                            <button class="btn btn-success btn-sm" onclick="return confirm('Yakin?')">Proses</button>
+                            <button class="btn btn-success btn-sm" onclick="return confirm('Yakin ingin memproses ini?')">✔️ Proses</button>
                         </form>
                     </td>
                 </tr>
