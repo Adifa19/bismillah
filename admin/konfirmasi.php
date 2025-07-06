@@ -10,358 +10,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
 // Fungsi untuk format tanggal Indonesia
 function format_tanggal_indo($tanggal) {
     if (empty($tanggal)) return '-';
-    
-    $bulan = [
-        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    
+    $bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     $timestamp = strtotime($tanggal);
     if ($timestamp === false) return $tanggal;
-    
-    $hari = date('d', $timestamp);
-    $bulan_num = date('n', $timestamp);
-    $tahun = date('Y', $timestamp);
-    
-    return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
+    return date('d', $timestamp) . ' ' . $bulan[date('n', $timestamp)] . ' ' . date('Y', $timestamp);
 }
 
-// Fungsi untuk debug OCR hasil
-function debugOCRDate($bill) {
-    echo "<div class='debug-info' style='background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;'>";
-    echo "<strong>Debug OCR Date:</strong><br>";
-    echo "ocr_date_found: " . ($bill['ocr_date_found'] ? 'true' : 'false') . "<br>";
-    
-    if ($bill['ocr_details']) {
-        $ocr_details = json_decode($bill['ocr_details'], true);
-        if ($ocr_details) {
-            echo "extracted_date: " . ($ocr_details['extracted_date'] ?? 'null') . "<br>";
-            echo "extracted_text (first 200 chars): " . substr($ocr_details['extracted_text'] ?? '', 0, 200) . "...<br>";
-        }
-    }
-    echo "</div>";
-}
-
-// Fungsi validasi OCR yang diperbaiki dan disatukan
-function getOCRValidationStatus($bill) {
-    // Inisialisasi default values
-    $is_amount_match = false;
-    $is_code_valid = false;
-    $is_date_valid = false;
-    $confidence = floatval($bill['ocr_confidence']);
-    
-    // Debug info
-    $debug_info = [
-        'ocr_jumlah' => $bill['ocr_jumlah'],
-        'expected_jumlah' => $bill['jumlah'],
-        'ocr_details' => $bill['ocr_details'],
-        'confidence' => $confidence
-    ];
-    
-    // 1. Validasi Jumlah
-    if ($bill['ocr_jumlah'] > 0) {
-        $is_amount_match = ($bill['ocr_jumlah'] == $bill['jumlah']);
-    }
-    
-    // 2. Validasi Kode Tagihan
-    if ($bill['ocr_kode_found']) {
-        $ocr_details = json_decode($bill['ocr_details'], true);
-        if ($ocr_details && isset($ocr_details['extracted_code'])) {
-            $extracted_code = trim($ocr_details['extracted_code']);
-            if (!empty($extracted_code)) {
-                $is_code_valid = (strtoupper($extracted_code) === strtoupper(trim($bill['kode_tagihan'])));
-                $debug_info['extracted_code'] = $extracted_code;
-                $debug_info['expected_code'] = $bill['kode_tagihan'];
-            }
-        }
-    }
-    
-    // 3. Validasi Tanggal
-    if ($bill['ocr_date_found']) {
-        $ocr_details = json_decode($bill['ocr_details'], true);
-        if ($ocr_details && isset($ocr_details['extracted_date'])) {
-            $extracted_date = trim($ocr_details['extracted_date']);
-            if (!empty($extracted_date)) {
-                $extracted_timestamp = strtotime($extracted_date);
-                if ($extracted_timestamp !== false) {
-                    $today = time();
-                    $tenggat_timestamp = strtotime($bill['tenggat']);
-                    $tanggal_kirim_timestamp = strtotime($bill['tanggal_kirim']);
-                    $tolerance_days_before_send = 7;
-                    $minimum_allowed_timestamp = $tanggal_kirim_timestamp - ($tolerance_days_before_send * 24 * 60 * 60);
-                    
-                    $is_date_valid = ($extracted_timestamp <= $today && 
-                                    $extracted_timestamp <= $tenggat_timestamp && 
-                                    $extracted_timestamp >= $minimum_allowed_timestamp);
-                    
-                    $debug_info['extracted_date'] = $extracted_date;
-                    $debug_info['date_conditions'] = [
-                        'extracted_timestamp' => date('Y-m-d H:i:s', $extracted_timestamp),
-                        'today' => date('Y-m-d H:i:s', $today),
-                        'tenggat' => date('Y-m-d H:i:s', $tenggat_timestamp),
-                        'min_allowed' => date('Y-m-d H:i:s', $minimum_allowed_timestamp),
-                        'condition_1' => $extracted_timestamp <= $today,
-                        'condition_2' => $extracted_timestamp <= $tenggat_timestamp,
-                        'condition_3' => $extracted_timestamp >= $minimum_allowed_timestamp
-                    ];
-                }
-            }
-        }
-    }
-    
-    // 4. Status Final
-    $is_fully_valid = ($is_amount_match && $is_code_valid && $is_date_valid && $confidence >= 70);
-    $has_ocr_data = ($bill['ocr_jumlah'] > 0);
-    
-    return [
-        'amount_match' => $is_amount_match,
-        'code_valid' => $is_code_valid,
-        'date_valid' => $is_date_valid,
-        'confidence' => $confidence,
-        'is_fully_valid' => $is_fully_valid,
-        'has_ocr_data' => $has_ocr_data,
-        'debug_info' => $debug_info
-    ];
-}
-
-// Fungsi untuk mendapatkan kelas confidence
-function getConfidenceClass($confidence) {
-    if ($confidence >= 80) return 'high';
-    if ($confidence >= 60) return 'medium';
-    return 'low';
-}
-
-// Fungsi ekstrak jumlah dari teks OCR
-function extractAmount($text) {
-    $patterns = [
-        '/(?:nominal|jumlah|total|bayar|rp\.?)\s*:?\s*([\d.,]+)/i',
-        '/rp\.?\s*([\d.,]+)/i',
-        '/([\d]{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)/i'
-    ];
-    
-    foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $text, $match)) {
-            $angka_str = preg_replace('/[^\d.,]/', '', $match[1]);
-            $angka_str = str_replace('.', '', $angka_str);
-            $angka_str = str_replace(',', '.', $angka_str);
-            return round(floatval($angka_str));
-        }
-    }
-    return 0;
-}
-
-// Fungsi ekstrak tanggal dari teks OCR yang diperbaiki dan lebih komprehensif
-function extractDate($text) {
-    // Debug: log teks yang akan diproses
-    error_log("OCR Text untuk ekstrak tanggal: " . $text);
-    
-    // Pattern yang lebih komprehensif untuk mendeteksi tanggal
-    $patterns = [
-        // Format DD/MM/YYYY atau DD-MM-YYYY atau DD.MM.YYYY
-        '/(?:tanggal|date|tgl|waktu|transfer|pembayaran|bayar)\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/i',
-        '/(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/i',
-        
-        // Format DD/MM/YY atau DD-MM-YY atau DD.MM.YY  
-        '/(?:tanggal|date|tgl|waktu|transfer|pembayaran|bayar)\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2})/i',
-        '/(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2})/i',
-        
-        // Format YYYY/MM/DD atau YYYY-MM-DD
-        '/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})/i',
-        
-        // Format Indonesia: 15 Januari 2024, 15 Jan 2024
-        '/(\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|jan|feb|mar|apr|mei|jun|jul|ags|sep|okt|nov|des)\s+\d{2,4})/i',
-        
-        // Format dengan kata kunci
-        '/(?:pada|tgl|tanggal|date|waktu|jam|pukul|transfer|bayar|pembayaran)\s*:?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i',
-        
-        // Format ISO: YYYY-MM-DD
-        '/(\d{4}-\d{2}-\d{2})/i',
-        
-        // Format dengan spasi: DD MM YYYY
-        '/(\d{1,2}\s+\d{1,2}\s+\d{4})/i',
-        
-        // Format pendek: DDMMYYYY
-        '/(\d{8})/i', // akan diproses khusus
-        
-        // Format dengan teks bank Indonesia
-        '/(?:mutasi|saldo|debet|kredit|transfer)\s+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i',
-    ];
-    
-    $found_dates = [];
-    
-    foreach ($patterns as $pattern) {
-        if (preg_match_all($pattern, $text, $matches)) {
-            foreach ($matches[1] as $match) {
-                $cleaned_date = trim($match);
-                
-                // Khusus untuk format DDMMYYYY (8 digit)
-                if (strlen($cleaned_date) == 8 && is_numeric($cleaned_date)) {
-                    $day = substr($cleaned_date, 0, 2);
-                    $month = substr($cleaned_date, 2, 2);
-                    $year = substr($cleaned_date, 4, 4);
-                    $cleaned_date = $day . '/' . $month . '/' . $year;
-                }
-                
-                $normalized_date = normalizeDate($cleaned_date);
-                if ($normalized_date && isValidDate($normalized_date)) {
-                    $found_dates[] = $normalized_date;
-                    error_log("Tanggal ditemukan: " . $cleaned_date . " -> " . $normalized_date);
-                }
-            }
-        }
-    }
-    
-    // Jika tidak ada tanggal ditemukan dengan pattern, coba ekstraksi agresif
-    if (empty($found_dates)) {
-        error_log("Tidak ada tanggal ditemukan dengan pattern, mencoba ekstraksi agresif...");
-        
-        // Ekstraksi semua angka yang mungkin tanggal
-        preg_match_all('/\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/', $text, $all_dates);
-        
-        foreach ($all_dates[0] as $date) {
-            $normalized_date = normalizeDate($date);
-            if ($normalized_date && isValidDate($normalized_date)) {
-                $found_dates[] = $normalized_date;
-                error_log("Tanggal ditemukan (agresif): " . $date . " -> " . $normalized_date);
-            }
-        }
-    }
-    
-    if (!empty($found_dates)) {
-        // Urutkan tanggal dari yang terbaru
-        usort($found_dates, function($a, $b) {
-            return strtotime($b) - strtotime($a);
-        });
-        
-        error_log("Tanggal terpilih: " . $found_dates[0]);
-        return $found_dates[0];
-    }
-    
-    error_log("Tidak ada tanggal yang valid ditemukan");
-    return '';
-}
-
-// Fungsi untuk normalisasi format tanggal yang diperbaiki
-function normalizeDate($date_string) {
-    error_log("Normalisasi tanggal: " . $date_string);
-    
-    // Mapping bulan Indonesia ke Inggris
-    $month_map = [
-        'januari' => 'january', 'februari' => 'february', 'maret' => 'march',
-        'april' => 'april', 'mei' => 'may', 'juni' => 'june',
-        'juli' => 'july', 'agustus' => 'august', 'september' => 'september',
-        'oktober' => 'october', 'november' => 'november', 'desember' => 'december',
-        'jan' => 'jan', 'feb' => 'feb', 'mar' => 'mar', 'apr' => 'apr',
-        'mei' => 'may', 'jun' => 'jun', 'jul' => 'jul', 'ags' => 'aug',
-        'sep' => 'sep', 'okt' => 'oct', 'nov' => 'nov', 'des' => 'dec'
-    ];
-    
-    $normalized = strtolower($date_string);
-    
-    // Replace bulan Indonesia dengan Inggris
-    foreach ($month_map as $indo => $eng) {
-        $normalized = str_replace($indo, $eng, $normalized);
-    }
-    
-    // Coba parsing dengan strtotime dulu
-    $timestamp = strtotime($normalized);
-    if ($timestamp !== false) {
-        error_log("Berhasil parsing dengan strtotime: " . date('Y-m-d', $timestamp));
-        return date('Y-m-d', $timestamp);
-    }
-    
-    // Jika gagal, coba parsing manual untuk format DD/MM/YYYY
-    if (preg_match('/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/', $date_string, $matches)) {
-        $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-        $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-        $year = $matches[3];
-        
-        // Konversi tahun 2 digit ke 4 digit
-        if (strlen($year) == 2) {
-            $current_year = date('Y');
-            $current_century = substr($current_year, 0, 2);
-            $year_int = intval($year);
-            
-            // Jika tahun > 50, anggap abad sebelumnya, jika <= 50, abad ini
-            if ($year_int > 50) {
-                $year = ($current_century - 1) . $year;
-            } else {
-                $year = $current_century . $year;
-            }
-        }
-        
-        // Validasi tanggal
-        if (checkdate($month, $day, $year)) {
-            $result = $year . '-' . $month . '-' . $day;
-            error_log("Berhasil parsing manual: " . $result);
-            return $result;
-        } else {
-            error_log("Tanggal tidak valid: " . $day . '/' . $month . '/' . $year);
-        }
-    }
-    
-    // Coba format YYYY-MM-DD atau YYYY/MM/DD
-    if (preg_match('/(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/', $date_string, $matches)) {
-        $year = $matches[1];
-        $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-        $day = str_pad($matches[3], 2, '0', STR_PAD_LEFT);
-        
-        if (checkdate($month, $day, $year)) {
-            $result = $year . '-' . $month . '-' . $day;
-            error_log("Berhasil parsing format YYYY: " . $result);
-            return $result;
-        }
-    }
-    
-    error_log("Gagal normalisasi tanggal: " . $date_string);
-    return false;
-}
-
-// Fungsi untuk validasi tanggal yang diperbaiki
-function isValidDate($date) {
-    $timestamp = strtotime($date);
-    if ($timestamp === false) {
-        error_log("Timestamp false untuk: " . $date);
-        return false;
-    }
-    
-    $current_year = date('Y');
-    $date_year = date('Y', $timestamp);
-    
-    // Validasi range tahun (10 tahun ke belakang, 1 tahun ke depan)
-    $is_valid = ($date_year >= $current_year - 10 && $date_year <= $current_year + 1);
-    
-    if (!$is_valid) {
-        error_log("Tanggal di luar range valid: " . $date . " (tahun: " . $date_year . ")");
-    }
-    
-    return $is_valid;
-}
-
-// Fungsi ekstrak kode dari teks OCR
-function extractCode($text, $expected_code = '') {
-    if (!empty($expected_code)) {
-        $pattern = '/(' . preg_quote(substr($expected_code, 0, 3), '/') . '[A-Z0-9\-_]+)/i';
-        if (preg_match($pattern, $text, $match)) {
-            return strtoupper(trim($match[1]));
-        }
-    }
-    
-    $patterns = [
-        '/([A-Z]{2,3}[\-_]?\d{3,6})/i',
-        '/([A-Z]+\d+)/i',
-        '/(TAG[\-_]?\d+)/i'
-    ];
-    
-    foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $text, $match)) {
-            return strtoupper(trim($match[1]));
-        }
-    }
-    return '';
-}
-
-// Fungsi run_ocr yang diperbaiki untuk debugging
+// Fungsi run_ocr terbaru (update PATH dan support JSON)
 function run_ocr($file_path, $kode_tagihan = '', $jumlah_tagihan = 0) {
     $full_path = realpath($file_path);
     if (!file_exists($full_path)) {
@@ -369,48 +24,56 @@ function run_ocr($file_path, $kode_tagihan = '', $jumlah_tagihan = 0) {
         return array('text' => '', 'jumlah' => 0, 'tanggal' => '', 'kode' => '', 'confidence' => 0);
     }
 
-    // Escape shell command dengan parameter tambahan
-    $command = escapeshellcmd("python ocr.py " . escapeshellarg($full_path) . " " . escapeshellarg($kode_tagihan) . " " . escapeshellarg($jumlah_tagihan));
+    $ocr_script = '/var/www/html/admin/ocr.py';
+    $command = "python3 " . escapeshellarg($ocr_script) . " " . escapeshellarg($full_path);
+    if (!empty($kode_tagihan)) $command .= " " . escapeshellarg($kode_tagihan);
+    if (!empty($jumlah_tagihan)) $command .= " " . escapeshellarg($jumlah_tagihan);
+
     $output = shell_exec($command);
-    
     error_log("OCR Command: " . $command);
     error_log("OCR Raw Output: " . $output);
-    
-    // Parse output OCR yang lebih detail
-    $result = array(
+
+    $result = [
         'text' => trim($output),
         'jumlah' => 0,
         'tanggal' => '',
         'kode' => '',
         'confidence' => 0
-    );
-    
-    if ($output) {
-        $lines = explode("\n", trim($output));
-        foreach ($lines as $line) {
-            if (strpos($line, 'AMOUNT:') === 0) {
-                $result['jumlah'] = intval(str_replace('AMOUNT:', '', $line));
-            } elseif (strpos($line, 'DATE:') === 0) {
-                $result['tanggal'] = trim(str_replace('DATE:', '', $line));
-            } elseif (strpos($line, 'CODE:') === 0) {
-                $result['kode'] = trim(str_replace('CODE:', '', $line));
-            } elseif (strpos($line, 'CONFIDENCE:') === 0) {
-                $result['confidence'] = floatval(str_replace('CONFIDENCE:', '', $line));
-            }
-        }
-        
-        // Fallback parsing jika format output tidak sesuai
-        if ($result['jumlah'] == 0) {
-            $result['jumlah'] = extractAmount($output);
-        }
-        if (empty($result['tanggal'])) {
-            $result['tanggal'] = extractDate($output);
-        }
-        if (empty($result['kode'])) {
-            $result['kode'] = extractCode($output, $kode_tagihan);
+    ];
+
+    $json = json_decode($output, true);
+    if (is_array($json)) {
+        $result['text'] = $json['extracted_text'] ?? '';
+        $result['jumlah'] = isset($json['jumlah']) ? intval($json['jumlah']) : 0;
+        $result['tanggal'] = $json['tanggal'] ?? '';
+        $result['kode'] = $json['kode_tagihan'] ?? ($json['kode'] ?? '');
+        $result['confidence'] = isset($json['confidence']) ? floatval($json['confidence']) : 0;
+        return $result;
+    }
+
+    $lines = explode("\n", $output);
+    foreach ($lines as $line) {
+        if (stripos($line, 'AMOUNT:') === 0) {
+            $result['jumlah'] = intval(trim(str_replace('AMOUNT:', '', $line)));
+        } elseif (stripos($line, 'DATE:') === 0) {
+            $result['tanggal'] = trim(str_replace('DATE:', '', $line));
+        } elseif (stripos($line, 'CODE:') === 0) {
+            $result['kode'] = trim(str_replace('CODE:', '', $line));
+        } elseif (stripos($line, 'CONFIDENCE:') === 0) {
+            $result['confidence'] = floatval(trim(str_replace('CONFIDENCE:', '', $line)));
         }
     }
-    
+
+    if ($result['jumlah'] == 0) {
+        $result['jumlah'] = extractAmount($output);
+    }
+    if (empty($result['tanggal'])) {
+        $result['tanggal'] = extractDate($output);
+    }
+    if (empty($result['kode'])) {
+        $result['kode'] = extractCode($output, $kode_tagihan);
+    }
+
     error_log("OCR Result: " . json_encode($result));
     return $result;
 }
