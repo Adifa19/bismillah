@@ -2,7 +2,6 @@
 require_once '../config.php';
 requireAdmin();
 
-// Jalankan OCR jika diminta
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($_POST['user_bill_id'])) {
     $user_bill_id = (int)$_POST['user_bill_id'];
     $stmt = $pdo->prepare("SELECT ub.*, b.kode_tagihan, b.jumlah FROM user_bills ub JOIN bills b ON ub.bill_id = b.id WHERE ub.id = ?");
@@ -10,11 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($
     $bill = $stmt->fetch();
 
     if ($bill && $bill['bukti_pembayaran']) {
-        $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
-        $command = escapeshellcmd("python3 ocr.py " . escapeshellarg($image_path));
-        $output = shell_exec($command);
+        // Real path untuk keamanan dan keakuratan
+        $image_path = realpath('../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran']);
+        $ocr_script = __DIR__ . '/ocr.py';
 
-        if ($output) {
+        // Pastikan file ada
+        if (file_exists($image_path) && file_exists($ocr_script)) {
+            $command = "/usr/bin/python3 " . escapeshellarg($ocr_script) . " " . escapeshellarg($image_path) . " 2>&1";
+            $output = shell_exec($command);
+
             $result = json_decode($output, true);
             if ($result) {
                 $ocr_jumlah = $result['jumlah'] ?? null;
@@ -31,15 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr']) && isset($
                 $update = $pdo->prepare("UPDATE user_bills SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? WHERE id = ?");
                 $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $user_bill_id]);
 
-                $_SESSION['message'] = 'OCR berhasil dijalankan.';
+                $_SESSION['message'] = '✅ OCR berhasil dijalankan.';
             } else {
-                $_SESSION['message'] = 'OCR gagal memproses gambar.';
+                $_SESSION['message'] = '❌ OCR gagal memproses gambar.<br><pre>' . htmlspecialchars($output) . '</pre>';
             }
         } else {
-            $_SESSION['message'] = 'Gagal menjalankan skrip OCR.';
+            $_SESSION['message'] = '❌ File gambar atau skrip OCR tidak ditemukan.';
         }
     } else {
-        $_SESSION['message'] = 'Data tidak valid atau bukti pembayaran tidak ditemukan.';
+        $_SESSION['message'] = '❌ Data tidak valid atau bukti pembayaran kosong.';
     }
 
     header('Location: konfirmasi.php');
@@ -70,7 +73,7 @@ $bills = $stmt->fetchAll();
 
     <?php if (isset($_SESSION['message'])): ?>
         <div class="alert alert-info">
-            <?= htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?>
+            <?= $_SESSION['message']; unset($_SESSION['message']); ?>
         </div>
     <?php endif; ?>
 
@@ -111,7 +114,7 @@ $bills = $stmt->fetchAll();
                             </small>
                             <hr>
                         <?php endif; ?>
-                        <!-- Tombol selalu muncul -->
+                        <!-- Tombol selalu tampil -->
                         <form method="POST" style="margin:0;">
                             <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
                             <button name="run_ocr" class="btn btn-sm btn-warning">Jalankan OCR</button>
