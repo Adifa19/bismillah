@@ -16,7 +16,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
 
         // Jalankan ocr.py dengan shell_exec, tangkap error juga
         $command = escapeshellcmd("python3 $ocr_script_path " . escapeshellarg($image_path)) . " 2>&1";
-        $output = shell_exec($command);
+       $output = shell_exec($command . ' 2>&1');
+
+// Tambahkan pengecekan output dan buat file log aman
+if (trim($output) === '') {
+    file_put_contents(__DIR__ . '/ocr_debug.txt', "⚠️ Tidak ada output dari shell_exec()\nCommand: $command\n");
+} else {
+    file_put_contents(__DIR__ . '/ocr_debug.txt', $output);
+}
+
 
         // Simpan hasil debug ke file
         file_put_contents(__DIR__ . '/ocr_debug.txt', $output);
