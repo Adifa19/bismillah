@@ -2,6 +2,30 @@
 require_once '../config.php';
 requireAdmin();
 
+// Proses konfirmasi/tolak pembayaran
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_konfirmasi'], $_POST['user_bill_id'], $_POST['status'])) {
+    $user_bill_id = (int)$_POST['user_bill_id'];
+    $status = $_POST['status'];
+    
+    if (in_array($status, ['konfirmasi', 'tolak'])) {
+        $stmt = $pdo->prepare("UPDATE user_bills SET status = ? WHERE id = ?");
+        if ($stmt->execute([$status, $user_bill_id])) {
+            if ($status === 'konfirmasi') {
+                $_SESSION['message'] = '✅ Pembayaran berhasil dikonfirmasi.';
+            } else {
+                $_SESSION['message'] = '❌ Pembayaran berhasil ditolak.';
+            }
+        } else {
+            $_SESSION['message'] = '❌ Gagal memproses pembayaran.';
+        }
+    } else {
+        $_SESSION['message'] = '❌ Status tidak valid.';
+    }
+    
+    header('Location: konfirmasi.php');
+    exit;
+}
+
 // Jalankan OCR jika diminta
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['user_bill_id'])) {
     $user_bill_id = (int)$_POST['user_bill_id'];
@@ -74,12 +98,26 @@ $stmt = $pdo->query("
         ub.ocr_kode_found,
         ub.ocr_date_found,
         ub.ocr_details,
+        ub.tanggal AS tanggal_kirim,
         b.kode_tagihan,
         b.jumlah,
         b.deskripsi,
+        b.tanggal AS tenggat,
         b.tenggat_waktu,
-        b.tanggal AS tanggal_tagihan,
-        u.username
+        u.username,
+        
+        -- Hitung selisih hari upload vs tenggat waktu
+        CASE 
+            WHEN ub.tanggal_upload IS NULL THEN NULL
+            ELSE DATEDIFF(ub.tanggal_upload, b.tenggat_waktu)
+        END AS selisih_hari,
+        -- Status ketepatan upload
+        CASE 
+            WHEN ub.tanggal_upload IS NULL THEN 'Belum Upload'
+            WHEN ub.tanggal_upload <= b.tenggat_waktu THEN 'Tepat Waktu'
+            ELSE 'Terlambat'
+        END AS status_ketepatan
+        
     FROM user_bills ub
     JOIN bills b ON ub.bill_id = b.id
     JOIN users u ON ub.user_id = u.id
@@ -205,9 +243,17 @@ function getMatchStatus($bill) {
             background-color: #f8d7da;
             color: #721c24;
         }
-        .badge-belum-ocr {
-            background-color: #fff3cd;
-            color: #856404;
+        .badge-tepat-waktu {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .badge-terlambat {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .badge-belum-upload {
+            background-color: #e2e3e5;
+            color: #495057;
         }
         .btn-action {
             border-radius: 8px;
@@ -338,6 +384,7 @@ function getMatchStatus($bill) {
                             <th><i class="fas fa-robot me-1"></i> Hasil OCR</th>
                             <th><i class="fas fa-check-circle me-1"></i> Status</th>
                             <th><i class="fas fa-calendar me-1"></i> Tanggal</th>
+                            <th><i class="fas fa-clock me-1"></i> Ketepatan</th>
                             <th><i class="fas fa-image me-1"></i> Bukti</th>
                             <th><i class="fas fa-cogs me-1"></i> Aksi</th>
                         </tr>
@@ -410,7 +457,26 @@ function getMatchStatus($bill) {
                                     <div class="text-muted-small">
                                         <div><strong>Upload:</strong><br><?= date('d/m/Y H:i', strtotime($bill['tanggal_upload'])) ?></div>
                                         <div><strong>Tenggat:</strong><br><?= date('d/m/Y', strtotime($bill['tenggat_waktu'])) ?></div>
+                                        <div><strong>Kirim:</strong><br><?= date('d/m/Y', strtotime($bill['tanggal_kirim'])) ?></div>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if ($bill['status_ketepatan'] === 'Tepat Waktu'): ?>
+                                        <span class="badge badge-tepat-waktu">
+                                            <i class="fas fa-check me-1"></i> Tepat Waktu
+                                        </span>
+                                    <?php elseif ($bill['status_ketepatan'] === 'Terlambat'): ?>
+                                        <span class="badge badge-terlambat">
+                                            <i class="fas fa-exclamation-triangle me-1"></i> Terlambat
+                                        </span>
+                                        <div class="text-muted-small mt-1">
+                                            <?= abs($bill['selisih_hari']) ?> hari
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="badge badge-belum-upload">
+                                            <i class="fas fa-hourglass-half me-1"></i> Belum Upload
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($bill['bukti_pembayaran']): ?>
@@ -423,7 +489,7 @@ function getMatchStatus($bill) {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <form method="POST" action="konfirmasi.php">
+                                    <form method="POST">
                                         <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
                                         <select name="status" class="form-select form-select-sm dropdown-auto mb-2">
                                             <?php if ($match_status === 'Sesuai'): ?>
@@ -434,7 +500,7 @@ function getMatchStatus($bill) {
                                                 <option value="konfirmasi">✅ Konfirmasi</option>
                                             <?php endif; ?>
                                         </select>
-                                        <button class="btn btn-primary btn-sm w-100" 
+                                        <button name="proses_konfirmasi" class="btn btn-primary btn-sm w-100" 
                                                 onclick="return confirm('Yakin ingin memproses pembayaran ini?')">
                                             <i class="fas fa-check me-1"></i> Proses
                                         </button>
