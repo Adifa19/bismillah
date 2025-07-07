@@ -406,6 +406,15 @@ function getMatchStatus($bill) {
                 <?= $_SESSION['message']; unset($_SESSION['message']); ?>
             </div>
         <?php endif; ?>
+<!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <a href="tagihan.php" class="nav-tab ">
+                    <i class="fas fa-plus-circle"></i> Buat Tagihan
+                </a>
+                <a href="konfirmasi.php" class="nav-tab active">
+                    <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
+                </a>
+            </div>
 
         <!-- Statistics Cards -->
         <div class="row mb-4">
@@ -449,16 +458,6 @@ function getMatchStatus($bill) {
                     Total: <?= count($bills) ?> pembayaran
                 </div>
             </div>
-            <!-- Navigation Tabs -->
-            <div class="nav-tabs">
-                <a href="tagihan.php" class="nav-tab ">
-                    <i class="fas fa-plus-circle"></i> Buat Tagihan
-                </a>
-                <a href="konfirmasi.php" class="nav-tab active">
-                    <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
-                </a>
-            </div>
-
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
