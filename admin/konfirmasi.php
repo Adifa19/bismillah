@@ -540,7 +540,7 @@ function getMatchStatus($bill) {
                                 </td>
                                 <td>
                                     <div class="text-muted-small">
-                                        <div><strong>Upload:</strong><br><?= format_tanggal_waktu_indo($bill['tanggal_upload']) ?></div>
+                                        <div><strong>Upload:</strong><br><?= format_tanggal_indo($bill['tanggal_upload']) ?></div>
                                         <div><strong>Kirim:</strong><br><?= format_tanggal_indo($bill['tanggal_kirim']) ?></div>
                                     </div>
                                 </td>
