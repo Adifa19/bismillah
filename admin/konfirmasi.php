@@ -396,12 +396,6 @@ function getMatchStatus($bill) {
                     </h1>
                     <p class="mb-0 opacity-90">Kelola dan verifikasi pembayaran dari warga</p>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="text-white-50">
-                        <i class="fas fa-calendar-alt me-2"></i>
-                        <?= format_tanggal_indo(date('Y-m-d')) ?>
-                    </div>
-                </div>
             </div>
         </div>
 
