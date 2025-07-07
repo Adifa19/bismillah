@@ -131,6 +131,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
 
     if ($bill && $bill['bukti_pembayaran']) {
         $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
+        if (!file_exists($image_path)) {
+            $_SESSION['message'] = '❌ File bukti tidak ditemukan.';
+            header('Location: konfirmasi.php');
+            exit;
+        }
+
         $command = "HOME=/tmp python3 " . escapeshellarg(__DIR__ . '/ocr.py') . " " . escapeshellarg($image_path);
         $output = shell_exec($command . ' 2>&1');
 
@@ -139,9 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
 
         if (is_array($result)) {
             $ocr_jumlah = isset($result['jumlah']) ? (int)preg_replace('/\D/', '', $result['jumlah']) : null;
-            $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
-            $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] !== '' ? 1 : 0;
-            $ocr_confidence = 0.0;
+            $ocr_kode_found = !empty($result['kode_tagihan']) ? 1 : 0;
+            $ocr_date_found = !empty($result['tanggal']) ? 1 : 0;
+            $ocr_confidence = 0.0; // bisa diisi jika pakai confidence model
             $ocr_details = json_encode([
                 'extracted_text' => $result['extracted_text'] ?? '',
                 'normalized_text' => $result['normalized_text'] ?? '',
@@ -149,20 +155,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
                 'extracted_date' => $result['tanggal'] ?? ''
             ]);
 
-            $update = $pdo->prepare("UPDATE user_bills SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? WHERE id = ?");
-            $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $user_bill_id]);
+            // Update ke DB
+            $update = $pdo->prepare("UPDATE user_bills 
+                SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? 
+                WHERE id = ?");
+            $success = $update->execute([
+                $ocr_jumlah,
+                $ocr_kode_found,
+                $ocr_date_found,
+                $ocr_confidence,
+                $ocr_details,
+                $user_bill_id
+            ]);
 
-            $_SESSION['message'] = '✅ OCR berhasil dijalankan.';
+            if ($success) {
+                $_SESSION['message'] = '✅ OCR berhasil disimpan.';
+            } else {
+                $_SESSION['message'] = '❌ Gagal menyimpan hasil OCR ke database.';
+            }
         } else {
-            $_SESSION['message'] = '❌ OCR gagal memproses gambar.';
+            $_SESSION['message'] = '❌ OCR gagal: hasil tidak valid.';
         }
     } else {
-        $_SESSION['message'] = '❌ Data tagihan tidak valid atau tidak ada bukti pembayaran.';
+        $_SESSION['message'] = '❌ Bukti pembayaran tidak ditemukan.';
     }
 
     header('Location: konfirmasi.php');
     exit;
 }
+
 
 // Ambil statistik untuk dashboard cards
 $stats = [
