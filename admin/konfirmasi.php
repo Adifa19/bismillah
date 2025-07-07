@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_all_ocr'])) {
                 $result = json_decode($json_string, true);
                 
                 if (is_array($result)) {
-                    $ocr_jumlah = $result['jumlah'] ?? null;
+                    $ocr_jumlah = isset($result['jumlah']) ? (int)preg_replace('/\D/', '', $result['jumlah']) : null;
                     $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
                     $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] !== '' ? 1 : 0;
                     $ocr_confidence = 0.0;
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
         }
 
         if (is_array($result)) {
-            $ocr_jumlah = $result['jumlah'] ?? null;
+            $ocr_jumlah = isset($result['jumlah']) ? (int)preg_replace('/\D/', '', $result['jumlah']) : null;
             $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
             $ocr_date_found = isset($result['tanggal']) && $result['tanggal'] !== '' ? 1 : 0;
             $ocr_confidence = 0.0;
