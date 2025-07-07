@@ -153,6 +153,23 @@ function getMatchStatus($bill) {
     if ($passed_checks === $total_checks) return 'Sesuai';
     return 'Tidak Sesuai';
 }
+function format_tanggal_indo($tanggal) {
+    if (empty($tanggal)) return '-';
+    
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    $timestamp = strtotime($tanggal);
+    if ($timestamp === false) return $tanggal;
+    
+    $hari = date('d', $timestamp);
+    $bulan_num = date('n', $timestamp);
+    $tahun = date('Y', $timestamp);
+    
+    return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
+}
 ?>
 
 <!DOCTYPE html>
@@ -455,9 +472,8 @@ function getMatchStatus($bill) {
                                 </td>
                                 <td>
                                     <div class="text-muted-small">
-                                        <div><strong>Upload:</strong><br><?= date('d/m/Y H:i', strtotime($bill['tanggal_upload'])) ?></div>
-                                        <div><strong>Tenggat:</strong><br><?= date('d/m/Y', strtotime($bill['tenggat_waktu'])) ?></div>
-                                        <div><strong>Kirim:</strong><br><?= date('d/m/Y', strtotime($bill['tanggal_kirim'])) ?></div>
+                                        <div><strong>Upload:</strong><br><?= format_tanggal_indo('d/m/Y H:i', strtotime($bill['tanggal_upload'])) ?></div>
+                                        <div><strong>Kirim:</strong><br><?= format_tanggal_indo('d/m/Y', strtotime($bill['tanggal_kirim'])) ?></div>
                                     </div>
                                 </td>
                                 <td>
