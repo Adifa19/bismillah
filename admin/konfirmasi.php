@@ -77,8 +77,8 @@ $stmt = $pdo->query("
         b.kode_tagihan,
         b.jumlah,
         b.deskripsi,
-        b.tenggat_waktu,
-        b.tanggal AS tanggal_tagihan,
+        b.tanggal as tenggat_waktu
+        ub.tanggal AS tanggal_tagihan,
         u.username
     FROM user_bills ub
     JOIN bills b ON ub.bill_id = b.id
