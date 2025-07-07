@@ -208,142 +208,151 @@ function getMatchStatus($bill) {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        .stats-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease;
-            border: none;
-        }
-        .stats-card:hover {
-            transform: translateY(-5px);
-        }
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .stats-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .table-container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        }
-        .table th {
-            background-color: #f8f9fa;
-            border: none;
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 15px 10px;
-        }
-        .table td {
-            border: none;
-            padding: 15px 10px;
-            vertical-align: middle;
-            border-bottom: 1px solid #f1f3f4;
-        }
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        .badge-status {
-            padding: 8px 12px;
-            font-size: 0.75rem;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-        .badge-sesuai {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .badge-tidak-sesuai {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .badge-belum-ocr {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .badge-tepat-waktu {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .badge-terlambat {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .badge-belum-upload {
-            background-color: #e2e3e5;
-            color: #495057;
-        }
-        .btn-action {
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        .btn-ocr {
-            background: linear-gradient(45deg, #f39c12, #f1c40f);
-            color: white;
-            border: none;
-        }
-        .btn-ocr:hover {
-            background: linear-gradient(45deg, #e67e22, #f39c12);
-            color: white;
-        }
-        .image-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid #e9ecef;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        .image-preview:hover {
-            transform: scale(1.1);
-        }
-        .ocr-details {
-            font-size: 0.8rem;
-            line-height: 1.4;
-        }
-        .alert-custom {
-            border-radius: 10px;
-            border: none;
-            padding: 15px 20px;
-        }
-        .dropdown-auto {
-            min-width: 120px;
-        }
-        .text-muted-small {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.header-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.stats-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease;
+    border: none;
+}
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.stats-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.table-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+.table th {
+    background-color: #f8f9fa;
+    border: none;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 15px 10px;
+}
+.table td {
+    border: none;
+    padding: 15px 10px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f3f4;
+}
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
 
-        /* Navigation Tabs */
+/* === Badge Status (STRONG Colors) === */
+.badge {
+    padding: 0.5em 0.75em;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge-sesuai {
+    background-color: #16a34a; /* green-600 */
+    color: white;
+}
+.badge-tidak-sesuai {
+    background-color: #dc2626; /* red-600 */
+    color: white;
+}
+.badge-belum-ocr {
+    background-color: #facc15; /* yellow-400 */
+    color: #78350f;
+}
+
+.badge-tepat-waktu {
+    background-color: #22c55e; /* green-500 */
+    color: white;
+}
+.badge-terlambat {
+    background-color: #ef4444; /* red-500 */
+    color: white;
+}
+.badge-belum-upload {
+    background-color: #a1a1aa; /* zinc-400 */
+    color: white;
+}
+
+/* === Button & Components === */
+.btn-action {
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.btn-ocr {
+    background: linear-gradient(45deg, #f39c12, #f1c40f);
+    color: white;
+    border: none;
+}
+.btn-ocr:hover {
+    background: linear-gradient(45deg, #e67e22, #f39c12);
+    color: white;
+}
+.image-preview {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.image-preview:hover {
+    transform: scale(1.1);
+}
+.ocr-details {
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+.alert-custom {
+    border-radius: 10px;
+    border: none;
+    padding: 15px 20px;
+}
+.dropdown-auto {
+    min-width: 120px;
+}
+.text-muted-small {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* === Navigation Tabs === */
 .nav-tabs {
     background: white;
     border-bottom: 2px solid #e2e8f0;
@@ -352,7 +361,6 @@ function getMatchStatus($bill) {
     gap: 0;
     margin-bottom: 2rem;
 }
-
 .nav-tab {
     padding: 1rem 1.5rem;
     text-decoration: none;
@@ -364,12 +372,10 @@ function getMatchStatus($bill) {
     align-items: center;
     gap: 0.5rem;
 }
-
 .nav-tab:hover {
     color: #4f46e5;
     background: #f1f5f9;
 }
-
 .nav-tab.active {
     color: #4f46e5;
     border-bottom-color: #4f46e5;
