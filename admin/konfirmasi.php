@@ -2,6 +2,45 @@
 require_once '../config.php';
 requireAdmin();
 
+// Fungsi untuk format tanggal Indonesia
+function format_tanggal_indo($tanggal) {
+    if (empty($tanggal)) return '-';
+    
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    $timestamp = strtotime($tanggal);
+    if ($timestamp === false) return $tanggal;
+    
+    $hari = date('d', $timestamp);
+    $bulan_num = date('n', $timestamp);
+    $tahun = date('Y', $timestamp);
+    
+    return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
+}
+
+// Fungsi untuk format tanggal Indonesia dengan waktu
+function format_tanggal_waktu_indo($tanggal) {
+    if (empty($tanggal)) return '-';
+    
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    $timestamp = strtotime($tanggal);
+    if ($timestamp === false) return $tanggal;
+    
+    $hari = date('d', $timestamp);
+    $bulan_num = date('n', $timestamp);
+    $tahun = date('Y', $timestamp);
+    $jam = date('H:i', $timestamp);
+    
+    return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun . ' ' . $jam;
+}
+
 // Proses konfirmasi/tolak pembayaran
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_konfirmasi'], $_POST['user_bill_id'], $_POST['status'])) {
     $user_bill_id = (int)$_POST['user_bill_id'];
@@ -153,23 +192,6 @@ function getMatchStatus($bill) {
     if ($passed_checks === $total_checks) return 'Sesuai';
     return 'Tidak Sesuai';
 }
-function format_tanggal_indo($tanggal) {
-    if (empty($tanggal)) return '-';
-    
-    $bulan = [
-        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    
-    $timestamp = strtotime($tanggal);
-    if ($timestamp === false) return $tanggal;
-    
-    $hari = date('d', $timestamp);
-    $bulan_num = date('n', $timestamp);
-    $tahun = date('Y', $timestamp);
-    
-    return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
-}
 ?>
 
 <!DOCTYPE html>
@@ -260,6 +282,10 @@ function format_tanggal_indo($tanggal) {
             background-color: #f8d7da;
             color: #721c24;
         }
+        .badge-belum-ocr {
+            background-color: #fff3cd;
+            color: #856404;
+        }
         .badge-tepat-waktu {
             background-color: #d4edda;
             color: #155724;
@@ -333,7 +359,7 @@ function format_tanggal_indo($tanggal) {
                 <div class="col-md-4 text-end">
                     <div class="text-white-50">
                         <i class="fas fa-calendar-alt me-2"></i>
-                        <?= date('d F Y') ?>
+                        <?= format_tanggal_indo(date('Y-m-d')) ?>
                     </div>
                 </div>
             </div>
@@ -472,8 +498,9 @@ function format_tanggal_indo($tanggal) {
                                 </td>
                                 <td>
                                     <div class="text-muted-small">
-                                        <div><strong>Upload:</strong><br><?= format_tanggal_indo('d/m/Y H:i', strtotime($bill['tanggal_upload'])) ?></div>
-                                        <div><strong>Kirim:</strong><br><?= format_tanggal_indo('d/m/Y', strtotime($bill['tanggal_kirim'])) ?></div>
+                                        <div><strong>Upload:</strong><br><?= format_tanggal_waktu_indo($bill['tanggal_upload']) ?></div>
+                                        <div><strong>Tenggat:</strong><br><?= format_tanggal_indo($bill['tenggat_waktu']) ?></div>
+                                        <div><strong>Kirim:</strong><br><?= format_tanggal_indo($bill['tanggal_kirim']) ?></div>
                                     </div>
                                 </td>
                                 <td>
