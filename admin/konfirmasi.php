@@ -342,9 +342,43 @@ function getMatchStatus($bill) {
             font-size: 0.8rem;
             color: #6c757d;
         }
+
+        /* Navigation Tabs */
+.nav-tabs {
+    background: white;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0 2rem;
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+}
+
+.nav-tab {
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    color: #64748b;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-tab:hover {
+    color: #4f46e5;
+    background: #f1f5f9;
+}
+
+.nav-tab.active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    background: #f1f5f9;
+}
     </style>
 </head>
 <body>
+    <?php include 'sidebar.php'; ?>
     <div class="main-container">
         <!-- Header Section -->
         <div class="header-section">
@@ -414,6 +448,15 @@ function getMatchStatus($bill) {
                 <div class="text-muted-small">
                     Total: <?= count($bills) ?> pembayaran
                 </div>
+            </div>
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <a href="tagihan.php" class="nav-tab ">
+                    <i class="fas fa-plus-circle"></i> Buat Tagihan
+                </a>
+                <a href="konfirmasi.php" class="nav-tab active">
+                    <i class="fas fa-check-circle"></i> Konfirmasi Pembayaran
+                </a>
             </div>
 
             <div class="table-responsive">
@@ -499,7 +542,6 @@ function getMatchStatus($bill) {
                                 <td>
                                     <div class="text-muted-small">
                                         <div><strong>Upload:</strong><br><?= format_tanggal_waktu_indo($bill['tanggal_upload']) ?></div>
-                                        <div><strong>Tenggat:</strong><br><?= format_tanggal_indo($bill['tenggat_waktu']) ?></div>
                                         <div><strong>Kirim:</strong><br><?= format_tanggal_indo($bill['tanggal_kirim']) ?></div>
                                     </div>
                                 </td>
