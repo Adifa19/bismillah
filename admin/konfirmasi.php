@@ -5,26 +5,24 @@ requireAdmin();
 // Fungsi untuk format tanggal Indonesia
 function format_tanggal_indo($tanggal) {
     if (empty($tanggal)) return '-';
-    
+
     $bulan = [
         1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
-    
+
     $timestamp = strtotime($tanggal);
     if ($timestamp === false) return $tanggal;
-    
+
     $hari = date('d', $timestamp);
     $bulan_num = date('n', $timestamp);
     $tahun = date('Y', $timestamp);
-    
+
     return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
 }
 
 // Handle konfirmasi/tolak tagihan
-// Handle konfirmasi/tolak tagihan
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status' && isset($_POST['status'], $_POST['user_bill_id'])) {
-
     $user_bill_id = (int)$_POST['user_bill_id'];
     $new_status = $_POST['status'];
 
@@ -77,22 +75,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_all_ocr'])) {
     $stmt = $pdo->query("SELECT ub.*, b.kode_tagihan, b.jumlah FROM user_bills ub JOIN bills b ON ub.bill_id = b.id WHERE ub.status = 'menunggu_konfirmasi' AND ub.bukti_pembayaran IS NOT NULL AND ub.ocr_details IS NULL");
     $bills = $stmt->fetchAll();
-    
+
     $processed = 0;
     $failed = 0;
-    
+
     foreach ($bills as $bill) {
-        $ocr_details = json_decode($bill['ocr_details'] ?? '', true);
         $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
         if (file_exists($image_path)) {
             $command = "HOME=/tmp python3 " . escapeshellarg(__DIR__ . '/ocr.py') . " " . escapeshellarg($image_path);
             $output = shell_exec($command . ' 2>&1');
-            
+
             $last_json_start = strrpos($output, '{');
             if ($last_json_start !== false) {
                 $json_string = substr($output, $last_json_start);
                 $result = json_decode($json_string, true);
-                
+
                 if (is_array($result)) {
                     $ocr_jumlah = isset($result['jumlah']) ? (int)preg_replace('/\D/', '', $result['jumlah']) : null;
                     $ocr_kode_found = isset($result['kode_tagihan']) && $result['kode_tagihan'] !== '' ? 1 : 0;
@@ -104,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_all_ocr'])) {
                         'extracted_code' => $result['kode_tagihan'] ?? '',
                         'extracted_date' => $result['tanggal'] ?? ''
                     ]);
-                    
+
                     $update = $pdo->prepare("UPDATE user_bills SET ocr_jumlah = ?, ocr_kode_found = ?, ocr_date_found = ?, ocr_confidence = ?, ocr_details = ? WHERE id = ?");
                     $update->execute([$ocr_jumlah, $ocr_kode_found, $ocr_date_found, $ocr_confidence, $ocr_details, $bill['id']]);
                     $processed++;
@@ -118,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_all_ocr'])) {
             $failed++;
         }
     }
-    
+
     $_SESSION['message'] = "✅ OCR selesai dijalankan. Berhasil: $processed, Gagal: $failed";
     header('Location: konfirmasi.php');
     exit;
@@ -135,16 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_ocr'], $_POST['us
     if ($bill && $bill['bukti_pembayaran']) {
         $image_path = '../warga/uploads/bukti_pembayaran/' . $bill['bukti_pembayaran'];
         $command = "HOME=/tmp python3 " . escapeshellarg(__DIR__ . '/ocr.py') . " " . escapeshellarg($image_path);
-
         $output = shell_exec($command . ' 2>&1');
-        
+
         $last_json_start = strrpos($output, '{');
-        if ($last_json_start !== false) {
-            $json_string = substr($output, $last_json_start);
-            $result = json_decode($json_string, true);
-        } else {
-            $result = null;
-        }
+        $result = $last_json_start !== false ? json_decode(substr($output, $last_json_start), true) : null;
 
         if (is_array($result)) {
             $ocr_jumlah = isset($result['jumlah']) ? (int)preg_replace('/\D/', '', $result['jumlah']) : null;
@@ -202,21 +193,19 @@ $bills = $stmt->fetchAll();
 function checkOCRMatch($bill) {
     $ocr_details = json_decode($bill['ocr_details'], true);
     if (!$ocr_details) return 'Belum OCR';
-    
+
     $amount_match = false;
     $date_match = false;
-    
-    // Cek kesesuaian jumlah (toleransi 5%)
+
     if ($bill['ocr_jumlah'] && $bill['jumlah']) {
         $tolerance = $bill['jumlah'] * 0.05;
         $amount_match = abs($bill['ocr_jumlah'] - $bill['jumlah']) <= $tolerance;
     }
-    
-    // Cek kesesuaian tanggal (apakah upload sebelum tenggat waktu)
+
     if ($bill['tanggal_upload'] && $bill['tenggat_waktu']) {
         $date_match = strtotime($bill['tanggal_upload']) <= strtotime($bill['tenggat_waktu']);
     }
-    
+
     if ($amount_match && $date_match) {
         return 'Sesuai';
     } elseif ($amount_match && !$date_match) {
@@ -228,6 +217,7 @@ function checkOCRMatch($bill) {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="id">
