@@ -770,14 +770,18 @@ function checkOCRMatch($bill) {
 <td>
     <div class="action-form">
         <!-- OCR Button -->
-        <?php if ($bill['bukti_pembayaran'] && !$ocr_details): ?>
-            <form method="POST" style="display: inline;">
-                <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
-                <button type="submit" name="run_ocr" class="btn btn-sm btn-outline-primary" title="Jalankan OCR">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </form>
-        <?php endif; ?>
+<?php if ($bill['bukti_pembayaran']): ?>
+    <form method="POST" style="display: inline;">
+        <input type="hidden" name="user_bill_id" value="<?= $bill['id'] ?>">
+        <button type="submit" name="run_ocr" class="btn btn-sm btn-outline-primary" title="Jalankan OCR ulang">
+            <i class="fas fa-eye"></i>
+        </button>
+    </form>
+    <?php if ($ocr_details): ?>
+        <div class="text-muted small mt-1">✅ Sudah OCR</div>
+    <?php endif; ?>
+<?php endif; ?>
+
         
         <!-- Tombol Konfirmasi & Tolak -->
         <div class="d-flex gap-2 mt-1">
