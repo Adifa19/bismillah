@@ -1009,7 +1009,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                         </div>
                         <div class="col-md-6">
                             <label for="tanggal_lahir" class="form-label">Tanggal Lahir *</label>
-                            <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" required >
+                            <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" 
+                                   max="2008-12-31" required>
                             <div class="invalid-feedback">Tanggal lahir wajib diisi.</div>
                         </div>
                         <div class="col-md-6">
