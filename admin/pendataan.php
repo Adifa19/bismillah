@@ -724,10 +724,10 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <small class="text-muted">Belum ada anggota keluarga</small>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <span class="badge bg-info"><?php echo $total_anggota; ?> orang</span>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <?php if ($has_complete_data): ?>
                                 <span class="badge <?php echo $all_active ? 'bg-success' : 'bg-danger'; ?>">
                                     <?php echo $all_active ? 'Aktif' : 'Tidak Aktif'; ?>
@@ -736,7 +736,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <span class="badge bg-secondary">Belum Lengkap</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <?php if (!empty($status_rumah_display)): ?>
                                 <span class="badge <?php echo $status_rumah_display === 'Pribadi' ? 'bg-success' : 'bg-warning'; ?>">
                                     <?php echo sanitize($status_rumah_display); ?>
@@ -745,7 +745,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <span class="badge bg-secondary">Belum Diisi</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <button class="btn btn-sm btn-info" data-bs-toggle="modal" 
                                     data-bs-target="#detailModal<?php echo $no; ?>">
                                 <i class="fas fa-eye"></i> Detail
