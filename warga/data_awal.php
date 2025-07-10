@@ -215,154 +215,152 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8 mx-auto">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Profile Warga</h4>
-                    </div>
-                    <div class="card-body">
-                        <?php if ($error): ?>
-                            <div class="alert alert-danger"><?php echo $error; ?></div>
-                        <?php endif; ?>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo $success; ?></div>
-                        <?php endif; ?>
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Profile Warga</h4>
+                </div>
+                <div class="card-body">
+                    <?php if ($error): ?>
+                        <div class="alert alert-danger"><?php echo $error; ?></div>
+                    <?php endif; ?>
+                    
+                    <?php if ($success): ?>
+                        <div class="alert alert-success"><?php echo $success; ?></div>
+                    <?php endif; ?>
 
-                        <form method="POST" enctype="multipart/form-data">
-                            <!-- Data yang sudah terisi otomatis dari admin -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="no_kk">No KK</label>
-                                        <input type="text" class="form-control" id="no_kk" name="no_kk" value="<?php echo htmlspecialchars($no_kk); ?>" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="alamat">Alamat Lengkap</label>
-                                        <input type="text" class="form-control" id="alamat" name="alamat" value="<?php echo htmlspecialchars($alamat); ?>" readonly>
-                                    </div>
+                    <form method="POST" enctype="multipart/form-data">
+                        <!-- Data yang sudah terisi otomatis dari admin -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="no_kk">No KK</label>
+                                    <input type="text" class="form-control" id="no_kk" name="no_kk" value="<?php echo htmlspecialchars($no_kk); ?>" readonly>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="alamat">Alamat Lengkap</label>
+                                    <input type="text" class="form-control" id="alamat" name="alamat" value="<?php echo htmlspecialchars($alamat); ?>" readonly>
+                                </div>
+                            </div>
+                        </div>
 
-                            <!-- Data yang perlu diisi user -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="nik">NIK *</label>
-                                        <input type="text" class="form-control" id="nik" name="nik" maxlength="16" value="<?php echo htmlspecialchars($data['nik'] ?? ''); ?>" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="nama_lengkap">Nama Lengkap *</label>
-                                        <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" value="<?php echo htmlspecialchars($data['nama_lengkap'] ?? ''); ?>" readonly>
-                                    </div>
+                        <!-- Data yang perlu diisi user -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="nik">NIK *</label>
+                                    <input type="text" class="form-control" id="nik" name="nik" maxlength="16" value="<?php echo htmlspecialchars($data['nik'] ?? ''); ?>" readonly>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="nama_lengkap">Nama Lengkap *</label>
+                                    <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" value="<?php echo htmlspecialchars($data['nama_lengkap'] ?? ''); ?>" readonly>
+                                </div>
+                            </div>
+                        </div>
 
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="tanggal_lahir">Tanggal Lahir *</label>
-                                        <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" 
-                                               value="<?php echo $data['tanggal_lahir'] ?? ''; ?>" 
-                                               max="2008-12-31" required>
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="tanggal_lahir">Tanggal Lahir *</label>
+                                    <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" 
+                                           value="<?php echo $data['tanggal_lahir'] ?? ''; ?>" 
+                                           max="2008-12-31" required>
                                 </div>
                             </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="jenis_kelamin">Jenis Kelamin *</label>
-                                        <select class="form-control" id="jenis_kelamin" name="jenis_kelamin" readonly>
-                                            <option value="">Pilih Jenis Kelamin</option>
-                                            <option value="Laki-laki" <?php echo ($data['jenis_kelamin'] ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
-                                            <option value="Perempuan" <?php echo ($data['jenis_kelamin'] ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
-                                        </select>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="jenis_kelamin">Jenis Kelamin *</label>
+                                    <select class="form-control" id="jenis_kelamin" name="jenis_kelamin" readonly>
+                                        <option value="">Pilih Jenis Kelamin</option>
+                                        <option value="Laki-laki" <?php echo ($data['jenis_kelamin'] ?? '') === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+                                        <option value="Perempuan" <?php echo ($data['jenis_kelamin'] ?? '') === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+                                    </select>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="pekerjaan">Pekerjaan *</label>
-                                        <select class="form-control" id="pekerjaan" name="pekerjaan" required onchange="toggleCustomJob()">
-                                            <option value="">Pilih Pekerjaan</option>
-                                            <option value="PNS" <?php echo ($data['pekerjaan'] ?? '') === 'PNS' ? 'selected' : ''; ?>>PNS</option>
-                                            <option value="TNI" <?php echo ($data['pekerjaan'] ?? '') === 'TNI' ? 'selected' : ''; ?>>TNI</option>
-                                            <option value="Polri" <?php echo ($data['pekerjaan'] ?? '') === 'Polri' ? 'selected' : ''; ?>>Polri</option>
-                                            <option value="Karyawan Swasta" <?php echo ($data['pekerjaan'] ?? '') === 'Karyawan Swasta' ? 'selected' : ''; ?>>Karyawan Swasta</option>
-                                            <option value="Wiraswasta" <?php echo ($data['pekerjaan'] ?? '') === 'Wiraswasta' ? 'selected' : ''; ?>>Wiraswasta</option>
-                                            <option value="Buruh" <?php echo ($data['pekerjaan'] ?? '') === 'Buruh' ? 'selected' : ''; ?>>Buruh</option>
-                                            <option value="Ibu Rumah Tangga" <?php echo ($data['pekerjaan'] ?? '') === 'Ibu Rumah Tangga' ? 'selected' : ''; ?>>Ibu Rumah Tangga</option>
-                                            <option value="Pengajar" <?php echo ($data['pekerjaan'] ?? '') === 'Pengajar' ? 'selected' : ''; ?>>Pengajar</option>
-                                            <option value="Lainnya" <?php echo ($data['pekerjaan'] ?? '') === 'Lainnya' ? 'selected' : ''; ?>>Lainnya</option>
-                                        </select>
-                                    </div>
-                                     <!-- Custom job input field -->
-                                    <div class="form-group mb-3" id="custom-job-field" style="display: none;">
-                                            <label for="pekerjaan_custom">Pekerjaan Lainnya *</label>
-                                            <input type="text" class="form-control" id="pekerjaan_custom" name="pekerjaan_custom" placeholder="Masukkan pekerjaan">
-                                        </div>
-                                    </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="no_telp">No Telepon *</label>
-                                        <input type="text" class="form-control" id="no_telp" name="no_telp" value="<?php echo htmlspecialchars($data['no_telp'] ?? ''); ?>" required>
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="pekerjaan">Pekerjaan *</label>
+                                    <select class="form-control" id="pekerjaan" name="pekerjaan" required onchange="toggleCustomJob()">
+                                        <option value="">Pilih Pekerjaan</option>
+                                        <option value="PNS" <?php echo ($data['pekerjaan'] ?? '') === 'PNS' ? 'selected' : ''; ?>>PNS</option>
+                                        <option value="TNI" <?php echo ($data['pekerjaan'] ?? '') === 'TNI' ? 'selected' : ''; ?>>TNI</option>
+                                        <option value="Polri" <?php echo ($data['pekerjaan'] ?? '') === 'Polri' ? 'selected' : ''; ?>>Polri</option>
+                                        <option value="Karyawan Swasta" <?php echo ($data['pekerjaan'] ?? '') === 'Karyawan Swasta' ? 'selected' : ''; ?>>Karyawan Swasta</option>
+                                        <option value="Wiraswasta" <?php echo ($data['pekerjaan'] ?? '') === 'Wiraswasta' ? 'selected' : ''; ?>>Wiraswasta</option>
+                                        <option value="Buruh" <?php echo ($data['pekerjaan'] ?? '') === 'Buruh' ? 'selected' : ''; ?>>Buruh</option>
+                                        <option value="Ibu Rumah Tangga" <?php echo ($data['pekerjaan'] ?? '') === 'Ibu Rumah Tangga' ? 'selected' : ''; ?>>Ibu Rumah Tangga</option>
+                                        <option value="Pengajar" <?php echo ($data['pekerjaan'] ?? '') === 'Pengajar' ? 'selected' : ''; ?>>Pengajar</option>
+                                        <option value="Lainnya" <?php echo ($data['pekerjaan'] ?? '') === 'Lainnya' ? 'selected' : ''; ?>>Lainnya</option>
+                                    </select>
+                                </div>
+                                <!-- Custom job input field -->
+                                <div class="form-group mb-3" id="custom-job-field" style="display: none;">
+                                    <label for="pekerjaan_custom">Pekerjaan Lainnya *</label>
+                                    <input type="text" class="form-control" id="pekerjaan_custom" name="pekerjaan_custom" placeholder="Masukkan pekerjaan">
                                 </div>
                             </div>
-
-                            <!-- Upload Files -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="foto_ktp">Foto KTP</label>
-                                        <input type="file" class="form-control" id="foto_ktp" name="foto_ktp" accept="image/*">
-                                        <?php if (isset($data['foto_ktp']) && $data['foto_ktp']): ?>
-                                            <small class="text-muted">File saat ini: <?php echo basename($data['foto_ktp']); ?></small>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label for="foto_kk">Foto Kartu Keluarga</label>
-                                        <input type="file" class="form-control" id="foto_kk" name="foto_kk" accept="image/*">
-                                        <?php if (isset($data['foto_kk']) && $data['foto_kk']): ?>
-                                            <small class="text-muted">File saat ini: <?php echo basename($data['foto_kk']); ?></small>
-                                        <?php endif; ?>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="no_telp">No Telepon *</label>
+                                    <input type="text" class="form-control" id="no_telp" name="no_telp" value="<?php echo htmlspecialchars($data['no_telp'] ?? ''); ?>" required>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="form-group mb-3">
-                                <label for="jumlah_anggota_keluarga">Jumlah Anggota Keluarga *</label>
-                                <input type="number" class="form-control" id="jumlah_anggota_keluarga" name="jumlah_anggota_keluarga" min="0" max="10" value="<?php echo $data['jumlah_anggota_keluarga'] ?? '0'; ?>" required>
-                                <small class="text-muted">Isi 0 jika tidak ada anggota keluarga lain</small>
-                            </div>
-
-                            <!-- Dynamic Family Members Section -->
-                            <div id="anggota_keluarga_section" style="display: none;">
-                                <h5>Data Anggota Keluarga</h5>
-                                <div id="anggota_container">
-                                    <!-- Dynamic content will be inserted here -->
+                        <!-- Upload Files -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="foto_ktp">Foto KTP</label>
+                                    <input type="file" class="form-control" id="foto_ktp" name="foto_ktp" accept="image/*">
+                                    <?php if (isset($data['foto_ktp']) && $data['foto_ktp']): ?>
+                                        <small class="text-muted">File saat ini: <?php echo basename($data['foto_ktp']); ?></small>
+                                    <?php endif; ?>
                                 </div>
                             </div>
-
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-primary">Simpan Data</button>
-                                <a href="profile.php" class="btn btn-secondary">Kembali</a>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="foto_kk">Foto Kartu Keluarga</label>
+                                    <input type="file" class="form-control" id="foto_kk" name="foto_kk" accept="image/*">
+                                    <?php if (isset($data['foto_kk']) && $data['foto_kk']): ?>
+                                        <small class="text-muted">File saat ini: <?php echo basename($data['foto_kk']); ?></small>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="jumlah_anggota_keluarga">Jumlah Anggota Keluarga *</label>
+                            <input type="number" class="form-control" id="jumlah_anggota_keluarga" name="jumlah_anggota_keluarga" min="0" max="10" value="<?php echo $data['jumlah_anggota_keluarga'] ?? '0'; ?>" required>
+                            <small class="text-muted">Isi 0 jika tidak ada anggota keluarga lain</small>
+                        </div>
+
+                        <!-- Dynamic Family Members Section -->
+                        <div id="anggota_keluarga_section" style="display: none;">
+                            <h5>Data Anggota Keluarga</h5>
+                            <div id="anggota_container">
+                                <!-- Dynamic content will be inserted here -->
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Simpan Data</button>
+                            <a href="profile.php" class="btn btn-secondary">Kembali</a>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-
+</div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
         
