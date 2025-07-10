@@ -677,12 +677,12 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                     }
                     ?>
                     <tr>
-                        <td class="text-center"><?php echo $no; ?></td>
-                        <td class="text-center">
+                        <td class="text-center align-top"><?php echo $no; ?></td>
+                        <td class="text-center align-top">
                             <?php echo sanitize($family['no_kk']); ?>
                         </td>
-                        <td><?php echo sanitize($family['alamat']); ?></td>
-                        <td>
+                        <td class="align-top"><?php echo sanitize($family['alamat']); ?></td>
+                        <td class="align-top">
                             <?php if ($has_complete_data): ?>
                                 <?php foreach ($kepala_keluarga_list as $k_index => $kepala): 
                                     if (empty($kepala['nama_lengkap'])) continue;
