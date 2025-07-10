@@ -267,9 +267,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
                                         <label for="tanggal_lahir">Tanggal Lahir *</label>
-                                        <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" value="<?php echo $data['tanggal_lahir'] ?? ''; ?>" required>
+                                        <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" 
+                                               value="<?php echo $data['tanggal_lahir'] ?? ''; ?>" 
+                                               max="2008-12-31" required>
                                     </div>
                                 </div>
+                            </div>
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
                                         <label for="jenis_kelamin">Jenis Kelamin *</label>
