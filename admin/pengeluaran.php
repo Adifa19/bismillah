@@ -135,7 +135,7 @@ $available_years = $year_stmt->fetchAll();
             min-height: 100vh;
         }
         
-        /* Layout Container */
+        /* Full Screen Layout */
         .layout-container {
             display: flex;
             min-height: 100vh;
@@ -154,14 +154,14 @@ $available_years = $year_stmt->fetchAll();
             background: #f8fafc;
         }
         
-        /* Page Header */
+        /* Header Section */
         .page-header {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
             color: white;
             padding: 2rem;
             border-radius: 16px;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.15);
+            box-shadow: 0 10px 25px rgba(107, 33, 168, 0.15);
         }
         
         .page-header h1 {
@@ -176,46 +176,6 @@ $available_years = $year_stmt->fetchAll();
         .page-header p {
             opacity: 0.9;
             font-size: 1.1rem;
-        }
-        
-        /* Navigation Tabs */
-        .nav-tabs {
-            background: white;
-            border-radius: 12px;
-            padding: 0.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .nav-tab {
-            flex: 1;
-            padding: 1rem 1.5rem;
-            text-decoration: none;
-            color: #64748b;
-            font-weight: 500;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            text-align: center;
-        }
-        
-        .nav-tab:hover {
-            color: #dc2626;
-            background: #fef2f2;
-            text-decoration: none;
-            transform: translateY(-1px);
-        }
-
-        .nav-tab.active {
-            color: white;
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
         }
         
         /* Alert Messages */
@@ -247,35 +207,20 @@ $available_years = $year_stmt->fetchAll();
             border: 1px solid #bae6fd;
         }
         
-        .alert-close {
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 1.25rem;
-            cursor: pointer;
-            padding: 0;
-            margin-left: auto;
-            opacity: 0.7;
-        }
-        
-        .alert-close:hover {
-            opacity: 1;
-        }
-        
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
         
         .stats-card {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
             color: white;
             padding: 2rem;
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.15);
+            box-shadow: 0 10px 25px rgba(107, 33, 168, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -328,20 +273,6 @@ $available_years = $year_stmt->fetchAll();
             padding: 2rem;
         }
         
-        /* Main Layout Grid */
-        .main-grid {
-            display: grid;
-            gap: 2rem;
-        }
-        
-        .form-section {
-            order: 1;
-        }
-        
-        .data-section {
-            order: 2;
-        }
-        
         /* Form Styles */
         .form-grid {
             display: grid;
@@ -374,8 +305,8 @@ $available_years = $year_stmt->fetchAll();
         
         input:focus, textarea:focus, select:focus {
             outline: none;
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+            border-color: #6B21A8;
+            box-shadow: 0 0 0 3px rgba(107, 33, 168, 0.1);
         }
         
         .currency-input {
@@ -407,7 +338,7 @@ $available_years = $year_stmt->fetchAll();
             align-items: center;
             gap: 0.5rem;
             padding: 0.875rem 1.5rem;
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -416,53 +347,30 @@ $available_years = $year_stmt->fetchAll();
             cursor: pointer;
             transition: all 0.2s;
             text-decoration: none;
+            justify-content: center;
         }
 
         .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.25);
-            color: white;
-            text-decoration: none;
+            box-shadow: 0 10px 25px rgba(107, 33, 168, 0.25);
         }
 
         .btn-outline {
             background: white;
-            color: #dc2626;
-            border: 2px solid #dc2626;
+            color: #6B21A8;
+            border: 2px solid #6B21A8;
         }
 
         .btn-outline:hover {
-            background: #dc2626;
+            background: #6B21A8;
             color: white;
         }
         
-        .btn-export {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        }
-        
-        .btn-export:hover {
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
-        }
-        
-        .btn-view {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            transition: all 0.2s;
-        }
-        
-        .btn-view:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
-            color: white;
-            text-decoration: none;
+        /* Layout Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
         }
         
         /* Filter Section */
@@ -498,7 +406,7 @@ $available_years = $year_stmt->fetchAll();
             flex-wrap: wrap;
         }
         
-        /* Export Section */
+        /* Export Buttons */
         .export-section {
             display: flex;
             gap: 0.75rem;
@@ -506,17 +414,26 @@ $available_years = $year_stmt->fetchAll();
             flex-wrap: wrap;
         }
         
+        .btn-export {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .btn-export:hover {
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
+        }
+        
         /* Table Styles */
         .table-container {
-            overflow: auto;
+            overflow-x: auto;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
+            background: white;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 800px;
+            min-width: 600px;
         }
         
         th {
@@ -541,40 +458,153 @@ $available_years = $year_stmt->fetchAll();
             background: #f8fafc;
         }
         
-        .table-empty {
+        /* Badge Styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        
+        .btn-view {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-view:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Empty State */
+        .empty-state {
             text-align: center;
             padding: 3rem 2rem;
             color: #64748b;
         }
         
-        .table-empty i {
+        .empty-state i {
             font-size: 3rem;
             margin-bottom: 1rem;
             display: block;
             opacity: 0.5;
         }
         
-        .table-empty p {
+        .empty-state p {
             font-size: 1.1rem;
             margin: 0;
         }
         
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 0 2rem;
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            color: #6B21A8;
+            background: #f1f5f9;
+            text-decoration: none;
+        }
+
+        .nav-tab.active {
+            color: #6B21A8;
+            border-bottom-color: #6B21A8;
+            background: #f1f5f9;
+        }
+        
+        /* Text utilities */
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-muted {
+            color: #6b7280;
+        }
+        
+        .fw-bold {
+            font-weight: bold;
+        }
+        
+        .text-danger {
+            color: #dc2626;
+        }
+        
+        .py-4 {
+            padding: 2rem 0;
+        }
+        
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .mb-0 {
+            margin-bottom: 0;
+        }
+        
+        .me-1 {
+            margin-right: 0.25rem;
+        }
+        
+        /* Close button for alerts */
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0;
+            margin-left: auto;
+            opacity: 0.7;
+        }
+        
+        .alert-close:hover {
+            opacity: 1;
+        }
+        
         /* Responsive Design */
-        @media (min-width: 1200px) {
-            .main-grid {
-                grid-template-columns: 400px 1fr;
-            }
-            
-            .form-section {
-                order: 1;
-            }
-            
-            .data-section {
-                order: 2;
+        @media (max-width: 1400px) {
+            .content-grid {
+                grid-template-columns: 1fr;
             }
         }
         
-        @media (max-width: 1199px) {
+        @media (max-width: 1200px) {
             .layout-container {
                 flex-direction: column;
             }
@@ -582,6 +612,44 @@ $available_years = $year_stmt->fetchAll();
             .sidebar {
                 width: 100%;
                 position: static;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .main-content {
+                padding: 1.5rem;
+            }
+            
+            .page-header {
+                padding: 1.5rem;
+            }
+            
+            .page-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .stats-card {
+                padding: 1.5rem;
+            }
+            
+            .stats-card .stats-content h2 {
+                font-size: 1.5rem;
+            }
+            
+            .stats-card .stats-icon {
+                font-size: 2rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .filter-section {
+                padding: 1.5rem;
             }
         }
         
@@ -591,40 +659,193 @@ $available_years = $year_stmt->fetchAll();
             }
             
             .page-header {
-                padding: 1.5rem;
+                padding: 1.25rem;
             }
             
             .page-header h1 {
                 font-size: 1.5rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
             }
             
-            .card-body {
-                padding: 1.5rem;
+            .page-header p {
+                font-size: 1rem;
+                text-align: center;
+            }
+            
+            .nav-tabs {
+                padding: 0 1rem;
+            }
+            
+            .nav-tab {
+                padding: 0.875rem 1rem;
+                font-size: 0.9rem;
             }
             
             .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stats-card {
+                padding: 1.25rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .stats-card .stats-content h2 {
+                font-size: 1.4rem;
+            }
+            
+            .card-header {
+                padding: 1.25rem 1.5rem;
+            }
+            
+            .card-header h2 {
+                font-size: 1.125rem;
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .card-body {
+                padding: 1.25rem;
+            }
+            
+            .filter-section {
+                padding: 1.25rem;
             }
             
             .filter-form {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
             
-            .filter-actions, .export-section {
+            .filter-actions {
                 flex-direction: column;
+                gap: 0.75rem;
             }
             
-            .nav-tabs {
+            .export-section {
                 flex-direction: column;
-                gap: 0.25rem;
+                gap: 0.75rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1.25rem;
+                font-size: 0.9rem;
+                width: 100%;
+                justify-content: center;
             }
             
             table {
                 font-size: 0.875rem;
+                min-width: 500px;
             }
             
             th, td {
                 padding: 0.75rem 0.5rem;
+            }
+            
+            th {
+                font-size: 0.75rem;
+            }
+            
+            .alert {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            
+            .alert-close {
+                align-self: flex-end;
+                margin-left: 0;
+                margin-top: -0.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .page-header h1 {
+                font-size: 1.375rem;
+            }
+            
+            .stats-card .stats-content h2 {
+                font-size: 1.25rem;
+            }
+            
+            .stats-card .stats-icon {
+                font-size: 1.75rem;
+            }
+            
+            .card-header {
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .filter-section {
+                padding: 1rem;
+            }
+            
+            .nav-tabs {
+                padding: 0 0.5rem;
+            }
+            
+            .nav-tab {
+                padding: 0.75rem;
+                font-size: 0.85rem;
+            }
+            
+            table {
+                min-width: 450px;
+            }
+            
+            th, td {
+                padding: 0.625rem 0.375rem;
+            }
+            
+            .btn-view {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem;
+            }
+            
+            .page-header {
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .stats-grid {
+                gap: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .card {
+                margin-bottom: 1.5rem;
+            }
+            
+            table {
+                font-size: 0.8rem;
+                min-width: 400px;
+            }
+            
+            th, td {
+                padding: 0.5rem 0.25rem;
+            }
+            
+            th {
+                font-size: 0.7rem;
             }
         }
         
@@ -643,6 +864,42 @@ $available_years = $year_stmt->fetchAll();
         .card {
             animation: slideIn 0.4s ease-out;
         }
+        
+        /* Mobile scroll indicators */
+        @media (max-width: 768px) {
+            .table-container {
+                position: relative;
+            }
+            
+            .table-container:before {
+                content: "← Geser untuk melihat lebih banyak →";
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(107, 33, 168, 0.9);
+                color: white;
+                text-align: center;
+                padding: 0.5rem;
+                font-size: 0.8rem;
+                z-index: 10;
+                pointer-events: none;
+            }
+            
+            .nav-tabs:after {
+                content: "← Geser →";
+                position: absolute;
+                right: 0.5rem;
+                top: 50%;
+                transform: translateY(-50%);
+                background: rgba(107, 33, 168, 0.9);
+                color: white;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.7rem;
+                pointer-events: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -659,7 +916,6 @@ $available_years = $year_stmt->fetchAll();
                 <p>Kelola dan monitor semua pengeluaran keuangan dengan mudah</p>
             </div>
 
-            <!-- Navigation Tabs -->
             <div class="nav-tabs">
                 <a href="income.php" class="nav-tab">
                     <i class="fas fa-plus-circle"></i> Pemasukan
@@ -668,6 +924,7 @@ $available_years = $year_stmt->fetchAll();
                     <i class="fas fa-minus-circle"></i> Pengeluaran
                 </a>
             </div>
+            <br><br>
 
             <!-- Alert for database upgrade -->
             <?php if (!$has_bukti_column): ?>
@@ -726,68 +983,65 @@ $available_years = $year_stmt->fetchAll();
                 </div>
             </div>
             
-            <!-- Main Content Grid -->
-            <div class="main-grid">
-                <!-- Form Section -->
-                <div class="form-section">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>
-                                <i class="fas fa-plus-circle"></i>
-                                Tambah Pengeluaran
-                            </h2>
-                        </div>
-                        <div class="card-body">
-                            <form action="" method="POST" <?php echo $has_bukti_column ? 'enctype="multipart/form-data"' : ''; ?> id="expenseForm">
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label for="deskripsi">
-                                            <i class="fas fa-edit"></i>
-                                            Deskripsi
-                                        </label>
-                                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3" required placeholder="Contoh: Kerja Bakti"></textarea>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="tanggal">
-                                            <i class="fas fa-calendar"></i>
-                                            Tanggal
-                                        </label>
-                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required value="<?php echo date('Y-m-d'); ?>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="jumlah">
-                                            <i class="fas fa-money-bill"></i>
-                                            Jumlah
-                                        </label>
-                                        <div class="currency-input">
-                                            <span class="currency-prefix">Rp</span>
-                                            <input type="number" class="form-control" id="jumlah" name="jumlah" min="1000" max="16777215" step="1000" required placeholder="30000">
-                                        </div>
-                                        <div class="form-text">Masukkan jumlah dalam rupiah penuh (contoh: 40000 untuk Rp 40.000)</div>
-                                    </div>
-                                    <?php if ($has_bukti_column): ?>
-                                    <div class="form-group">
-                                        <label for="bukti">
-                                            <i class="fas fa-image"></i>
-                                            Bukti Kwitansi/Foto
-                                        </label>
-                                        <input type="file" class="form-control" id="bukti" name="bukti" accept=".jpg,.jpeg,.png,.pdf">
-                                        <div class="form-text">Format: JPG, JPEG, PNG, PDF (Max 5MB)</div>
-                                    </div>
-                                    <?php endif; ?>
-                                    <input type="hidden" name="action" value="add_expense">
-                                    <button type="submit" class="btn">
-                                        <i class="fas fa-save"></i>
-                                        Simpan Data
-                                    </button>
+            <div class="content-grid">
+                <!-- Form Input -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-plus-circle"></i>
+                            Tambah Pengeluaran
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="" method="POST" <?php echo $has_bukti_column ? 'enctype="multipart/form-data"' : ''; ?> id="expenseForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="deskripsi">
+                                        <i class="fas fa-edit"></i>
+                                        Deskripsi
+                                    </label>
+                                    <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3" required placeholder="Contoh: Kerja Bakti"></textarea>
                                 </div>
-                            </form>
-                        </div>
+                                <div class="form-group">
+                                    <label for="tanggal">
+                                        <i class="fas fa-calendar"></i>
+                                        Tanggal
+                                    </label>
+                                    <input type="date" class="form-control" id="tanggal" name="tanggal" required value="<?php echo date('Y-m-d'); ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label for="jumlah">
+                                        <i class="fas fa-money-bill"></i>
+                                        Jumlah
+                                    </label>
+                                    <div class="currency-input">
+                                        <span class="currency-prefix">Rp</span>
+                                        <input type="number" class="form-control" id="jumlah" name="jumlah" min="1000" max="16777215" step="1000" required placeholder="30000">
+                                    </div>
+                                    <div class="form-text">Masukkan jumlah dalam rupiah penuh (contoh: 40000 untuk Rp 40.000)</div>
+                                </div>
+                                <?php if ($has_bukti_column): ?>
+                                <div class="form-group">
+                                    <label for="bukti">
+                                        <i class="fas fa-image"></i>
+                                        Bukti Kwitansi/Foto
+                                    </label>
+                                    <input type="file" class="form-control" id="bukti" name="bukti" accept=".jpg,.jpeg,.png,.pdf">
+                                    <div class="form-text">Format: JPG, JPEG, PNG, PDF (Max 5MB)</div>
+                                </div>
+                                <?php endif; ?>
+                                <input type="hidden" name="action" value="add_expense">
+                                <button type="submit" class="btn" style="color: white;">
+                                    <i class="fas fa-save"></i>
+                                    Simpan Data
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 
-                <!-- Data Section -->
-                <div class="data-section">
+                <!-- Filters and Data -->
+                <div>
                     <!-- Filter Section -->
                     <div class="filter-section">
                         <h3>
@@ -824,7 +1078,7 @@ $available_years = $year_stmt->fetchAll();
                                 </div>
                             </div>
                             <div class="filter-actions">
-                                <button type="submit" class="btn">
+                                <button type="submit" class="btn" style="color: white;">
                                     <i class="fas fa-search"></i>
                                     Terapkan Filter
                                 </button>
@@ -838,11 +1092,11 @@ $available_years = $year_stmt->fetchAll();
 
                     <!-- Export Buttons -->
                     <div class="export-section">
-                        <a href="export_excel_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export">
+                        <a href="export_excel_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export" style="color: white;">
                             <i class="fas fa-file-excel"></i>
                             Export Excel
                         </a>
-                        <a href="export_pdf_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export">
+                        <a href="export_pdf_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export" style="color: white;">
                             <i class="fas fa-file-pdf"></i>
                             Export PDF
                         </a>
@@ -872,26 +1126,26 @@ $available_years = $year_stmt->fetchAll();
                                 <tbody>
                                     <?php if (empty($result)): ?>
                                         <tr>
-                                            <td colspan="<?php echo $has_bukti_column ? '5' : '4'; ?>" class="table-empty">
-                                                <i class="fas fa-inbox"></i>
-                                                <p>Tidak ada data pengeluaran ditemukan</p>
+                                            <td colspan="<?php echo $has_bukti_column ? '5' : '4'; ?>" class="text-center py-4">
+                                                <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                                <p class="text-muted mb-0">Tidak ada data ditemukan</p>
                                             </td>
                                         </tr>
                                     <?php else: ?>
                                         <?php $no = 1; foreach ($result as $row): ?>
                                             <tr>
                                                 <td><?php echo $no++; ?></td>
-                                                <td><?php echo htmlspecialchars($row['deskripsi']); ?></td>
+                                                <td><?php echo sanitize($row['deskripsi']); ?></td>
                                                 <td><?php echo format_tanggal_indo($row['tanggal']); ?></td>
-                                                <td style="font-weight: 600; color: #dc2626;"><?php echo format_rupiah($row['jumlah']); ?></td>
+                                                <td class="fw-bold text-danger"><?php echo format_rupiah($row['jumlah']); ?></td>
                                                 <?php if ($has_bukti_column): ?>
                                                 <td>
                                                     <?php if (!empty($row['bukti_file'])): ?>
                                                         <a href="uploads/bukti/<?php echo $row['bukti_file']; ?>" target="_blank" class="btn-view">
-                                                            <i class="fas fa-eye"></i>Lihat
+                                                            <i class="fas fa-eye me-1"></i>Lihat
                                                         </a>
                                                     <?php else: ?>
-                                                        <span style="color: #9ca3af;">-</span>
+                                                        <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
                                                 <?php endif; ?>
@@ -915,11 +1169,7 @@ $available_years = $year_stmt->fetchAll();
             alerts.forEach(function(alert) {
                 alert.style.opacity = '0';
                 alert.style.transform = 'translateY(-10px)';
-                setTimeout(function() {
-                    if (alert.parentNode) {
-                        alert.parentNode.removeChild(alert);
-                    }
-                }, 300);
+                setTimeout(() => alert.remove(), 300);
             });
         }, 5000);
 
@@ -933,16 +1183,8 @@ $available_years = $year_stmt->fetchAll();
         });
 
         // Form validation
-        document.querySelector('#expenseForm').addEventListener('submit', function(e) {
+        document.querySelector('form').addEventListener('submit', function(e) {
             const jumlah = parseInt(document.getElementById('jumlah').value);
-            const deskripsi = document.getElementById('deskripsi').value.trim();
-            
-            if (!deskripsi) {
-                e.preventDefault();
-                alert('Deskripsi harus diisi');
-                return false;
-            }
-            
             if (jumlah < 1000) {
                 e.preventDefault();
                 alert('Jumlah minimal adalah Rp 1.000');
@@ -990,36 +1232,72 @@ $available_years = $year_stmt->fetchAll();
             }
         });
 
-        // Enhanced animations for alerts
-        document.querySelectorAll('.alert').forEach(function(alert) {
-            alert.style.transition = 'all 0.3s ease';
+        // Mobile table scroll hint
+        let tableScrollHintShown = false;
+        const tableContainer = document.querySelector('.table-container');
+        
+        if (tableContainer && window.innerWidth <= 768) {
+            tableContainer.addEventListener('scroll', function() {
+                if (!tableScrollHintShown) {
+                    tableScrollHintShown = true;
+                    const hint = tableContainer.querySelector(':before');
+                    if (hint) {
+                        setTimeout(() => {
+                            hint.style.opacity = '0';
+                        }, 3000);
+                    }
+                }
+            });
+        }
+
+        // Smooth scroll for mobile navigation
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    const navTabs = document.querySelector('.nav-tabs');
+                    navTabs.scrollLeft = this.offsetLeft - (navTabs.offsetWidth / 2) + (this.offsetWidth / 2);
+                }
+            });
         });
 
-        // Smooth form submission feedback
-        document.querySelector('#expenseForm').addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
+        // Enhanced button feedback for touch devices
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
             
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-            submitBtn.disabled = true;
+            btn.addEventListener('touchend', function() {
+                this.style.transform = '';
+            });
+        });
+
+        // Responsive table helper
+        function handleTableResponsive() {
+            const table = document.querySelector('table');
+            const container = document.querySelector('.table-container');
             
-            // Reset button after 3 seconds if form doesn't redirect
-            setTimeout(function() {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 3000);
-        });
+            if (table && container && window.innerWidth <= 768) {
+                // Add swipe gesture hint
+                let startX = 0;
+                container.addEventListener('touchstart', function(e) {
+                    startX = e.touches[0].clientX;
+                });
+                
+                container.addEventListener('touchmove', function(e) {
+                    if (Math.abs(e.touches[0].clientX - startX) > 10) {
+                        // User is swiping, hide hint
+                        const hint = container.querySelector(':before');
+                        if (hint) {
+                            hint.style.display = 'none';
+                        }
+                    }
+                });
+            }
+        }
 
-        // Filter form auto-submit on change
-        document.getElementById('filter_bulan').addEventListener('change', function() {
-            // Optional: auto-submit filter form when selection changes
-            // document.getElementById('filterForm').submit();
-        });
-
-        document.getElementById('filter_tahun').addEventListener('change', function() {
-            // Optional: auto-submit filter form when selection changes
-            // document.getElementById('filterForm').submit();
-        });
+        // Initialize responsive features
+        window.addEventListener('load', handleTableResponsive);
+        window.addEventListener('resize', handleTableResponsive);
     </script>
 </body>
 </html>
