@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password'])) {
             $stmt = $pdo->prepare("
                 SELECT u.id, u.username, p.no_hp, p.nama 
                 FROM users u 
-                LEFT JOIN pendataan p ON u.user_id = p.user_id 
+                LEFT JOIN pendataan p ON u.id = p.user_id 
                 WHERE u.username = ? AND u.status_pengguna = 'Aktif'
             ");
             $stmt->execute([$username]);
