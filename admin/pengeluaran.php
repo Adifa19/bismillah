@@ -135,7 +135,7 @@ $available_years = $year_stmt->fetchAll();
             min-height: 100vh;
         }
         
-        /* Full Screen Layout */
+        /* Layout Container */
         .layout-container {
             display: flex;
             min-height: 100vh;
@@ -154,14 +154,14 @@ $available_years = $year_stmt->fetchAll();
             background: #f8fafc;
         }
         
-        /* Header Section */
+        /* Page Header */
         .page-header {
-            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             color: white;
             padding: 2rem;
             border-radius: 16px;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 25px rgba(107, 33, 168, 0.15);
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.15);
         }
         
         .page-header h1 {
@@ -176,6 +176,46 @@ $available_years = $year_stmt->fetchAll();
         .page-header p {
             opacity: 0.9;
             font-size: 1.1rem;
+        }
+        
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: white;
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+        
+        .nav-tab:hover {
+            color: #dc2626;
+            background: #fef2f2;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        .nav-tab.active {
+            color: white;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
         }
         
         /* Alert Messages */
@@ -207,6 +247,21 @@ $available_years = $year_stmt->fetchAll();
             border: 1px solid #bae6fd;
         }
         
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0;
+            margin-left: auto;
+            opacity: 0.7;
+        }
+        
+        .alert-close:hover {
+            opacity: 1;
+        }
+        
         /* Stats Cards */
         .stats-grid {
             display: grid;
@@ -216,11 +271,11 @@ $available_years = $year_stmt->fetchAll();
         }
         
         .stats-card {
-            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             color: white;
             padding: 2rem;
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(107, 33, 168, 0.15);
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -273,6 +328,20 @@ $available_years = $year_stmt->fetchAll();
             padding: 2rem;
         }
         
+        /* Main Layout Grid */
+        .main-grid {
+            display: grid;
+            gap: 2rem;
+        }
+        
+        .form-section {
+            order: 1;
+        }
+        
+        .data-section {
+            order: 2;
+        }
+        
         /* Form Styles */
         .form-grid {
             display: grid;
@@ -305,8 +374,8 @@ $available_years = $year_stmt->fetchAll();
         
         input:focus, textarea:focus, select:focus {
             outline: none;
-            border-color: #6B21A8;
-            box-shadow: 0 0 0 3px rgba(107, 33, 168, 0.1);
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
         }
         
         .currency-input {
@@ -338,7 +407,7 @@ $available_years = $year_stmt->fetchAll();
             align-items: center;
             gap: 0.5rem;
             padding: 0.875rem 1.5rem;
-            background: linear-gradient(135deg, #6B21A8 0%, #4C1D95 100%);
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -351,25 +420,49 @@ $available_years = $year_stmt->fetchAll();
 
         .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 10px 25px rgba(107, 33, 168, 0.25);
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.25);
+            color: white;
+            text-decoration: none;
         }
 
         .btn-outline {
             background: white;
-            color: #6B21A8;
-            border: 2px solid #6B21A8;
+            color: #dc2626;
+            border: 2px solid #dc2626;
         }
 
         .btn-outline:hover {
-            background: #6B21A8;
+            background: #dc2626;
             color: white;
         }
         
-        /* Layout Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
+        .btn-export {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .btn-export:hover {
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
+        }
+        
+        .btn-view {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-view:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+            color: white;
+            text-decoration: none;
         }
         
         /* Filter Section */
@@ -405,20 +498,12 @@ $available_years = $year_stmt->fetchAll();
             flex-wrap: wrap;
         }
         
-        /* Export Buttons */
+        /* Export Section */
         .export-section {
             display: flex;
             gap: 0.75rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
-        }
-        
-        .btn-export {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        }
-        
-        .btn-export:hover {
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
         }
         
         /* Table Styles */
@@ -456,97 +541,40 @@ $available_years = $year_stmt->fetchAll();
             background: #f8fafc;
         }
         
-        /* Badge Styles */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.375rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            white-space: nowrap;
-        }
-        
-        .btn-view {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            transition: all 0.2s;
-        }
-        
-        .btn-view:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
-            color: white;
-            text-decoration: none;
-        }
-        
-        /* Empty State */
-        .empty-state {
+        .table-empty {
             text-align: center;
             padding: 3rem 2rem;
             color: #64748b;
         }
         
-        .empty-state i {
+        .table-empty i {
             font-size: 3rem;
             margin-bottom: 1rem;
             display: block;
             opacity: 0.5;
         }
         
-        .empty-state p {
+        .table-empty p {
             font-size: 1.1rem;
             margin: 0;
         }
         
-        /* Navigation Tabs */
-        .nav-tabs {
-            background: white;
-            border-bottom: 2px solid #e2e8f0;
-            padding: 0 2rem;
-            display: flex;
-            gap: 0;
-            margin-bottom: 0;
+        /* Responsive Design */
+        @media (min-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 400px 1fr;
+            }
+            
+            .form-section {
+                order: 1;
+            }
+            
+            .data-section {
+                order: 2;
+            }
         }
         
-        .nav-tab {
-            padding: 1rem 1.5rem;
-            text-decoration: none;
-            color: #64748b;
-            font-weight: 500;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-       /* Tabs */
-        .nav-tab:hover {
-            color: #6B21A8;
-            background: #f1f5f9;
-            text-decoration: none;
-        }
-
-        .nav-tab.active {
-            color: #6B21A8;
-            border-bottom-color: #6B21A8;
-            background: #f1f5f9;
-        }
-        
-        /* Responsive */
-        @media (max-width: 1200px) {
+        @media (max-width: 1199px) {
             .layout-container {
                 flex-direction: column;
             }
@@ -554,10 +582,6 @@ $available_years = $year_stmt->fetchAll();
             .sidebar {
                 width: 100%;
                 position: static;
-            }
-            
-            .content-grid {
-                grid-template-columns: 1fr;
             }
         }
         
@@ -586,12 +610,13 @@ $available_years = $year_stmt->fetchAll();
                 grid-template-columns: 1fr;
             }
             
-            .filter-actions {
+            .filter-actions, .export-section {
                 flex-direction: column;
             }
             
-            .export-section {
+            .nav-tabs {
                 flex-direction: column;
+                gap: 0.25rem;
             }
             
             table {
@@ -618,22 +643,6 @@ $available_years = $year_stmt->fetchAll();
         .card {
             animation: slideIn 0.4s ease-out;
         }
-        
-        /* Close button for alerts */
-        .alert-close {
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 1.25rem;
-            cursor: pointer;
-            padding: 0;
-            margin-left: auto;
-            opacity: 0.7;
-        }
-        
-        .alert-close:hover {
-            opacity: 1;
-        }
     </style>
 </head>
 <body>
@@ -650,6 +659,7 @@ $available_years = $year_stmt->fetchAll();
                 <p>Kelola dan monitor semua pengeluaran keuangan dengan mudah</p>
             </div>
 
+            <!-- Navigation Tabs -->
             <div class="nav-tabs">
                 <a href="income.php" class="nav-tab">
                     <i class="fas fa-plus-circle"></i> Pemasukan
@@ -658,7 +668,6 @@ $available_years = $year_stmt->fetchAll();
                     <i class="fas fa-minus-circle"></i> Pengeluaran
                 </a>
             </div>
-            <br><br>
 
             <!-- Alert for database upgrade -->
             <?php if (!$has_bukti_column): ?>
@@ -717,65 +726,68 @@ $available_years = $year_stmt->fetchAll();
                 </div>
             </div>
             
-            <div class="content-grid">
-                <!-- Form Input -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2>
-                            <i class="fas fa-plus-circle"></i>
-                            Tambah Pengeluaran
-                        </h2>
-                    </div>
-                    <div class="card-body">
-                        <form action="" method="POST" <?php echo $has_bukti_column ? 'enctype="multipart/form-data"' : ''; ?> id="expenseForm">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="deskripsi">
-                                        <i class="fas fa-edit"></i>
-                                        Deskripsi
-                                    </label>
-                                    <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3" required placeholder="Contoh: Kerja Bakti"></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="tanggal">
-                                        <i class="fas fa-calendar"></i>
-                                        Tanggal
-                                    </label>
-                                    <input type="date" class="form-control" id="tanggal" name="tanggal" required value="<?php echo date('Y-m-d'); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="jumlah">
-                                        <i class="fas fa-money-bill"></i>
-                                        Jumlah
-                                    </label>
-                                    <div class="currency-input">
-                                        <span class="currency-prefix">Rp</span>
-                                        <input type="number" class="form-control" id="jumlah" name="jumlah" min="1000" max="16777215" step="1000" required placeholder="30000">
+            <!-- Main Content Grid -->
+            <div class="main-grid">
+                <!-- Form Section -->
+                <div class="form-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>
+                                <i class="fas fa-plus-circle"></i>
+                                Tambah Pengeluaran
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <form action="" method="POST" <?php echo $has_bukti_column ? 'enctype="multipart/form-data"' : ''; ?> id="expenseForm">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="deskripsi">
+                                            <i class="fas fa-edit"></i>
+                                            Deskripsi
+                                        </label>
+                                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3" required placeholder="Contoh: Kerja Bakti"></textarea>
                                     </div>
-                                    <div class="form-text">Masukkan jumlah dalam rupiah penuh (contoh: 40000 untuk Rp 40.000)</div>
+                                    <div class="form-group">
+                                        <label for="tanggal">
+                                            <i class="fas fa-calendar"></i>
+                                            Tanggal
+                                        </label>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required value="<?php echo date('Y-m-d'); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="jumlah">
+                                            <i class="fas fa-money-bill"></i>
+                                            Jumlah
+                                        </label>
+                                        <div class="currency-input">
+                                            <span class="currency-prefix">Rp</span>
+                                            <input type="number" class="form-control" id="jumlah" name="jumlah" min="1000" max="16777215" step="1000" required placeholder="30000">
+                                        </div>
+                                        <div class="form-text">Masukkan jumlah dalam rupiah penuh (contoh: 40000 untuk Rp 40.000)</div>
+                                    </div>
+                                    <?php if ($has_bukti_column): ?>
+                                    <div class="form-group">
+                                        <label for="bukti">
+                                            <i class="fas fa-image"></i>
+                                            Bukti Kwitansi/Foto
+                                        </label>
+                                        <input type="file" class="form-control" id="bukti" name="bukti" accept=".jpg,.jpeg,.png,.pdf">
+                                        <div class="form-text">Format: JPG, JPEG, PNG, PDF (Max 5MB)</div>
+                                    </div>
+                                    <?php endif; ?>
+                                    <input type="hidden" name="action" value="add_expense">
+                                    <button type="submit" class="btn">
+                                        <i class="fas fa-save"></i>
+                                        Simpan Data
+                                    </button>
                                 </div>
-                                <?php if ($has_bukti_column): ?>
-                                <div class="form-group">
-                                    <label for="bukti">
-                                        <i class="fas fa-image"></i>
-                                        Bukti Kwitansi/Foto
-                                    </label>
-                                    <input type="file" class="form-control" id="bukti" name="bukti" accept=".jpg,.jpeg,.png,.pdf">
-                                    <div class="form-text">Format: JPG, JPEG, PNG, PDF (Max 5MB)</div>
-                                </div>
-                                <?php endif; ?>
-                                <input type="hidden" name="action" value="add_expense">
-                                <button type="submit" class="btn" style="color: white;">
-                                    <i class="fas fa-save"></i>
-                                    Simpan Data
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Filters and Data -->
-                <div>
+                <!-- Data Section -->
+                <div class="data-section">
                     <!-- Filter Section -->
                     <div class="filter-section">
                         <h3>
@@ -812,7 +824,7 @@ $available_years = $year_stmt->fetchAll();
                                 </div>
                             </div>
                             <div class="filter-actions">
-                                <button type="submit" class="btn" style="color: white;">
+                                <button type="submit" class="btn">
                                     <i class="fas fa-search"></i>
                                     Terapkan Filter
                                 </button>
@@ -826,11 +838,11 @@ $available_years = $year_stmt->fetchAll();
 
                     <!-- Export Buttons -->
                     <div class="export-section">
-                        <a href="export_excel_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export" style="color: white;">
+                        <a href="export_excel_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export">
                             <i class="fas fa-file-excel"></i>
                             Export Excel
                         </a>
-                        <a href="export_pdf_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export" style="color: white;">
+                        <a href="export_pdf_pengeluaran.php?<?php echo http_build_query($_GET); ?>" class="btn btn-export">
                             <i class="fas fa-file-pdf"></i>
                             Export PDF
                         </a>
@@ -857,38 +869,37 @@ $available_years = $year_stmt->fetchAll();
                                         <?php endif; ?>
                                     </tr>
                                 </thead>
-                                    <tbody>
-                                        <?php if (empty($result)): ?>
+                                <tbody>
+                                    <?php if (empty($result)): ?>
+                                        <tr>
+                                            <td colspan="<?php echo $has_bukti_column ? '5' : '4'; ?>" class="table-empty">
+                                                <i class="fas fa-inbox"></i>
+                                                <p>Tidak ada data pengeluaran ditemukan</p>
+                                            </td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php $no = 1; foreach ($result as $row): ?>
                                             <tr>
-                                                <td colspan="<?php echo $has_bukti_column ? '5' : '4'; ?>" class="text-center py-4">
-                                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                                                    <p class="text-muted mb-0">Tidak ada data ditemukan</p>
-                                                </td>
-                                            </tr>
-                                        <?php else: ?>
-                                            <?php $no = 1; foreach ($result as $row): ?>
-                                                <tr>
-                                                    <td><?php echo $no++; ?></td>
-                                                    <td><?php echo sanitize($row['deskripsi']); ?></td>
-                                                    <td><?php echo format_tanggal_indo($row['tanggal']); ?></td>
-                                                    <td class="fw-bold text-danger"><?php echo format_rupiah($row['jumlah']); ?></td>
-                                                    <?php if ($has_bukti_column): ?>
-                                                    <td>
-                                                        <?php if (!empty($row['bukti_file'])): ?>
-                                                            <a href="uploads/bukti/<?php echo $row['bukti_file']; ?>" target="_blank" class="btn btn-sm btn-warning" style="color: white;">
-                                                                <i class="fas fa-eye me-1"></i>Lihat
-                                                            </a>
-                                                        <?php else: ?>
-                                                            <span class="text-muted">-</span>
-                                                        <?php endif; ?>
-                                                    </td>
+                                                <td><?php echo $no++; ?></td>
+                                                <td><?php echo htmlspecialchars($row['deskripsi']); ?></td>
+                                                <td><?php echo format_tanggal_indo($row['tanggal']); ?></td>
+                                                <td style="font-weight: 600; color: #dc2626;"><?php echo format_rupiah($row['jumlah']); ?></td>
+                                                <?php if ($has_bukti_column): ?>
+                                                <td>
+                                                    <?php if (!empty($row['bukti_file'])): ?>
+                                                        <a href="uploads/bukti/<?php echo $row['bukti_file']; ?>" target="_blank" class="btn-view">
+                                                            <i class="fas fa-eye"></i>Lihat
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <span style="color: #9ca3af;">-</span>
                                                     <?php endif; ?>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                                                </td>
+                                                <?php endif; ?>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -897,14 +908,18 @@ $available_years = $year_stmt->fetchAll();
     </div>
 
     <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-10px)';
+                setTimeout(function() {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 300);
             });
         }, 5000);
 
@@ -918,8 +933,16 @@ $available_years = $year_stmt->fetchAll();
         });
 
         // Form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
+        document.querySelector('#expenseForm').addEventListener('submit', function(e) {
             const jumlah = parseInt(document.getElementById('jumlah').value);
+            const deskripsi = document.getElementById('deskripsi').value.trim();
+            
+            if (!deskripsi) {
+                e.preventDefault();
+                alert('Deskripsi harus diisi');
+                return false;
+            }
+            
             if (jumlah < 1000) {
                 e.preventDefault();
                 alert('Jumlah minimal adalah Rp 1.000');
@@ -965,6 +988,37 @@ $available_years = $year_stmt->fetchAll();
             if (!isNaN(value) && value > 0) {
                 console.log('Input value:', value);
             }
+        });
+
+        // Enhanced animations for alerts
+        document.querySelectorAll('.alert').forEach(function(alert) {
+            alert.style.transition = 'all 0.3s ease';
+        });
+
+        // Smooth form submission feedback
+        document.querySelector('#expenseForm').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            submitBtn.disabled = true;
+            
+            // Reset button after 3 seconds if form doesn't redirect
+            setTimeout(function() {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Filter form auto-submit on change
+        document.getElementById('filter_bulan').addEventListener('change', function() {
+            // Optional: auto-submit filter form when selection changes
+            // document.getElementById('filterForm').submit();
+        });
+
+        document.getElementById('filter_tahun').addEventListener('change', function() {
+            // Optional: auto-submit filter form when selection changes
+            // document.getElementById('filterForm').submit();
         });
     </script>
 </body>
