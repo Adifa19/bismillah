@@ -272,6 +272,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             from { transform: translate(-50%, -50%) rotate(0deg); }
             to { transform: translate(-50%, -50%) rotate(360deg); }
         }
+         .forgot-password-link {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .forgot-password-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .forgot-password-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -312,6 +329,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span class="btn-text">Masuk</span>
             </button>
         </form>
+
+        <div class="forgot-password-link">
+            <a href="forgot_pass.php" id="forgotPasswordLink">
+                <i class="fas fa-key"></i> Lupa Password?
+            </a>
+        </div>
         
         <div class="register-link">
             <p>Belum punya akun? <a href="regist.php">Daftar di sini</a></p>
