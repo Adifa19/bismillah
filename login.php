@@ -19,13 +19,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user = $stmt->fetch();
                 
                 if ($user) {
-                    // Get pendataan data
-                    $stmt2 = $pdo->prepare("SELECT nama, no_hp FROM pendataan WHERE user_id = ?");
+                    // Debug: Cek struktur tabel pendataan
+                    $debug_stmt = $pdo->prepare("DESCRIBE pendataan");
+                    $debug_stmt->execute();
+                    $columns = $debug_stmt->fetchAll();
+                    
+                    // Tampilkan kolom yang tersedia (untuk debug)
+                    $available_columns = array_column($columns, 'Field');
+                    echo "<pre>Kolom tersedia di tabel pendataan: " . implode(', ', $available_columns) . "</pre>";
+                    // error_log("Kolom tersedia di tabel pendataan: " . implode(', ', $available_columns));
+                    
+                    // Get pendataan data - gunakan kolom yang pasti ada
+                    $stmt2 = $pdo->prepare("SELECT no_hp FROM pendataan WHERE user_id = ?");
                     $stmt2->execute([$user['id']]);
                     $pendataan = $stmt2->fetch();
                     
                     if ($pendataan && !empty($pendataan['no_hp'])) {
-                        $user['nama'] = $pendataan['nama'] ?: $user['username'];
+                        $user['nama'] = $user['username']; // Gunakan username sebagai nama
                         $user['no_hp'] = $pendataan['no_hp'];
                     } else {
                         $user = false; // Reset jika tidak ada data pendataan atau no_hp
