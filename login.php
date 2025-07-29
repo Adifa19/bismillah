@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("
                     SELECT u.id, u.username, p.nama, p.no_hp 
                     FROM users u 
-                    LEFT JOIN pendataan p ON u.user_id = p.user_id 
+                    LEFT JOIN pendataan p ON u.id = p.user_id 
                     WHERE u.username = ? AND u.status_pengguna = 'Aktif'
                 ");
                 $stmt->execute([$username]);
@@ -56,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Username tidak ditemukan atau nomor HP belum terdaftar!';
                 }
             } catch (PDOException $e) {
-                $error = 'Terjadi kesalahan sistem!';
+                $error = 'Terjadi kesalahan sistem: ' . $e->getMessage();
+                // Untuk production, gunakan: $error = 'Terjadi kesalahan sistem!';
             }
         }
     } else {
@@ -97,7 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Username atau password salah!';
                 }
             } catch (PDOException $e) {
-                $error = 'Terjadi kesalahan sistem!';
+                $error = 'Terjadi kesalahan sistem: ' . $e->getMessage();
+                // Untuk production, gunakan: $error = 'Terjadi kesalahan sistem!';
             }
         }
     }
