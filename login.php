@@ -13,15 +13,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Username harus diisi!';
         } else {
             try {
-                // Get user data with phone number from pendataan table
-                $stmt = $pdo->prepare("
-                    SELECT u.id, u.username, COALESCE(p.nama, u.username) as nama, p.no_hp 
-                    FROM users u 
-                    LEFT JOIN pendataan p ON u.id = p.user_id 
-                    WHERE u.username = ? AND u.status_pengguna = 'Aktif'
-                ");
+                // Get user data first
+                $stmt = $pdo->prepare("SELECT id, username FROM users WHERE username = ? AND status_pengguna = 'Aktif'");
                 $stmt->execute([$username]);
                 $user = $stmt->fetch();
+                
+                if ($user) {
+                    // Get pendataan data
+                    $stmt2 = $pdo->prepare("SELECT nama, no_hp FROM pendataan WHERE user_id = ?");
+                    $stmt2->execute([$user['id']]);
+                    $pendataan = $stmt2->fetch();
+                    
+                    if ($pendataan && !empty($pendataan['no_hp'])) {
+                        $user['nama'] = $pendataan['nama'] ?: $user['username'];
+                        $user['no_hp'] = $pendataan['no_hp'];
+                    } else {
+                        $user = false; // Reset jika tidak ada data pendataan atau no_hp
+                    }
+                }
                 
                 if ($user && !empty($user['no_hp'])) {
                     // Generate new password
@@ -56,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Username tidak ditemukan atau nomor HP belum terdaftar!';
                 }
             } catch (PDOException $e) {
-                $error = 'Terjadi kesalahan sistem: ' . $e->getMessage();
+                // Untuk development - tampilkan error detail
+                $error = 'Terjadi kesalahan database: ' . $e->getMessage();
                 // Untuk production, gunakan: $error = 'Terjadi kesalahan sistem!';
             }
         }
