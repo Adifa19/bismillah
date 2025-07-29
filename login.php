@@ -4,158 +4,101 @@ require_once 'config.php';
 $error = '';
 $success = '';
 
-// Handle forgot password
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password'])) {
-    $username = trim($_POST['forgot_username']);
-    
-    if (empty($username)) {
-        $error = 'Username harus diisi!';
-    } else {
-        try {
-            // Cari user berdasarkan username dan ambil data dari tabel pendataan untuk mendapatkan no_hp
-            $stmt = $pdo->prepare("
-                SELECT u.id, u.username, p.no_hp, p.nama 
-                FROM users u 
-                LEFT JOIN pendataan p ON u.id = p.user_id 
-                WHERE u.username = ? AND u.status_pengguna = 'Aktif'
-            ");
-            $stmt->execute([$username]);
-            $user = $stmt->fetch();
-            
-            if ($user && !empty($user['no_hp'])) {
-                // Generate password baru
-                $new_password = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 8);
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action']) && $_POST['action'] === 'forgot_password') {
+        // Handle forgot password
+        $username = trim($_POST['forgot_username']);
+        
+        if (empty($username)) {
+            $error = 'Username harus diisi!';
+        } else {
+            try {
+                // Get user data with phone number from pendataan table
+                $stmt = $pdo->prepare("
+                    SELECT u.id, u.username, p.nama, p.no_hp 
+                    FROM users u 
+                    LEFT JOIN pendataan p ON u.user_id = p.user_id 
+                    WHERE u.username = ? AND u.status_pengguna = 'Aktif'
+                ");
+                $stmt->execute([$username]);
+                $user = $stmt->fetch();
                 
-                // Update password di database
-                $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-                $update_stmt->execute([$hashed_password, $user['id']]);
-                
-                // Format nomor WhatsApp (pastikan dimulai dengan 62)
-                $no_hp = $user['no_hp'];
-                if (substr($no_hp, 0, 1) === '0') {
-                    $no_hp = '62' . substr($no_hp, 1);
-                } elseif (substr($no_hp, 0, 2) !== '62') {
-                    $no_hp = '62' . $no_hp;
-                }
-                
-                // Pesan WhatsApp
-                $nama = $user['nama'] ?? $user['username'];
-                $message = "🔐 *RESET PASSWORD SISTEM PENDATAAN*\n\n";
-                $message .= "Halo *{$nama}*,\n\n";
-                $message .= "Password Anda telah berhasil direset.\n";
-                $message .= "Berikut adalah data login baru Anda:\n\n";
-                $message .= "👤 *Username:* {$user['username']}\n";
-                $message .= "🔑 *Password Baru:* {$new_password}\n\n";
-                $message .= "⚠️ *PENTING:*\n";
-                $message .= "• Segera login dan ganti password Anda\n";
-                $message .= "• Jangan bagikan password ini kepada siapapun\n";
-                $message .= "• Password ini berlaku segera setelah pesan ini diterima\n\n";
-                $message .= "🏠 *Sistem Pendataan Warga*\n";
-                $message .= "_Pesan otomatis - Harap tidak membalas pesan ini_";
-                
-                // Simpan data untuk ditampilkan (untuk debugging)
-                $_SESSION['temp_password_data'] = [
-                    'username' => $user['username'],
-                    'password' => $new_password,
-                    'no_hp' => $no_hp,
-                    'nama' => $nama
-                ];
-                
-                // OPSI 1: Menggunakan WhatsApp Web Direct (Sederhana)
-                $wa_url = "https://wa.me/{$no_hp}?text=" . urlencode($message);
-                
-                // OPSI 2: Kirim menggunakan cURL ke WhatsApp API (Uncomment jika punya API)
-                /*
-                try {
-                    $api_url = "https://api.whatsapp.com/send"; // Ganti dengan API endpoint Anda
-                    $api_token = "YOUR_API_TOKEN"; // Token API Anda
+                if ($user && !empty($user['no_hp'])) {
+                    // Generate new password
+                    $new_password = 'PASS' . rand(1000, 9999);
+                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
                     
-                    $curl = curl_init();
-                    curl_setopt_array($curl, array(
-                        CURLOPT_URL => $api_url,
-                        CURLOPT_RETURNTRANSFER => true,
-                        CURLOPT_ENCODING => '',
-                        CURLOPT_MAXREDIRS => 10,
-                        CURLOPT_TIMEOUT => 30,
-                        CURLOPT_FOLLOWLOCATION => true,
-                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                        CURLOPT_CUSTOMREQUEST => 'POST',
-                        CURLOPT_POSTFIELDS => json_encode([
-                            'phone' => $no_hp,
-                            'message' => $message
-                        ]),
-                        CURLOPT_HTTPHEADER => array(
-                            'Content-Type: application/json',
-                            'Authorization: Bearer ' . $api_token
-                        ),
-                    ));
+                    // Update password in database
+                    $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $update_stmt->execute([$hashed_password, $user['id']]);
                     
-                    $response = curl_exec($curl);
-                    curl_close($curl);
-                    
-                    $success = "Password baru telah dikirim ke WhatsApp Anda (+{$no_hp}).";
-                } catch (Exception $e) {
-                    $success = "Password baru telah dibuat. <a href='{$wa_url}' target='_blank' style='color: #667eea; text-decoration: underline;'>Klik di sini untuk membuka WhatsApp dan lihat password baru</a>";
-                }
-                */
-                
-                $success = "Password baru telah dibuat untuk username: <strong>{$user['username']}</strong><br>";
-                $success .= "Password baru: <strong style='color: #e53e3e; font-family: monospace;'>{$new_password}</strong><br><br>";
-                $success .= "<a href='{$wa_url}' target='_blank' class='btn btn-secondary' style='display: inline-block; padding: 10px 20px; margin-top: 10px; text-decoration: none; border-radius: 8px; color: white;'>";
-                $success .= "<i class='fab fa-whatsapp'></i> Kirim ke WhatsApp (+{$no_hp})";
-                $success .= "</a>";
-                
-            } else if ($user && empty($user['no_hp'])) {
-                $error = 'Nomor HP tidak terdaftar! Silakan hubungi administrator.';
-            } else {
-                $error = 'Username tidak ditemukan atau akun tidak aktif!';
-            }
-        } catch (PDOException $e) {
-            $error = 'Terjadi kesalahan sistem!';
-        }
-    }
-}
-
-// Handle login
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    
-    if (empty($username) || empty($password)) {
-        $error = 'Username dan password harus diisi!';
-    } else {
-        try {
-            $stmt = $pdo->prepare("SELECT id, username, password, role, status_pengguna, data_lengkap FROM users WHERE username = ?");
-            $stmt->execute([$username]);
-            $user = $stmt->fetch();
-            
-            if ($user && password_verify($password, $user['password'])) {
-                if ($user['status_pengguna'] === 'Tidak Aktif') {
-                    $error = 'Akun Anda telah dinonaktifkan!';
-                } else {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['role'] = $user['role'];
-                    $_SESSION['data_lengkap'] = $user['data_lengkap'];
-                    
-                    // Redirect berdasarkan role dan status data
-                    if ($user['role'] === 'admin') {
-                        header('Location: admin/dashboard.php');
-                    } else {
-                        if ($user['data_lengkap']) {
-                            header('Location: warga/dashboard.php');
-                        } else {
-                            header('Location: warga/data_awal.php');
-                        }
+                    // Prepare WhatsApp message
+                    $phone = $user['no_hp'];
+                    // Remove leading zero and add country code if needed
+                    if (substr($phone, 0, 1) === '0') {
+                        $phone = '62' . substr($phone, 1);
                     }
-                    exit;
+                    
+                    $message = "Halo " . $user['nama'] . ",\n\n";
+                    $message .= "Password baru untuk akun Anda:\n";
+                    $message .= "Username: " . $user['username'] . "\n";
+                    $message .= "Password: " . $new_password . "\n\n";
+                    $message .= "Silakan login dan ubah password Anda segera.\n\n";
+                    $message .= "Terima kasih,\nSistem Pendataan Warga";
+                    
+                    // Create WhatsApp URL
+                    $wa_url = "https://wa.me/" . $phone . "?text=" . urlencode($message);
+                    
+                    $success = "Password baru telah dibuat. Silakan cek WhatsApp Anda.";
+                    echo "<script>window.open('" . $wa_url . "', '_blank');</script>";
+                    
+                } else {
+                    $error = 'Username tidak ditemukan atau nomor HP belum terdaftar!';
                 }
-            } else {
-                $error = 'Username atau password salah!';
+            } catch (PDOException $e) {
+                $error = 'Terjadi kesalahan sistem!';
             }
-        } catch (PDOException $e) {
-            $error = 'Terjadi kesalahan sistem!';
+        }
+    } else {
+        // Handle regular login
+        $username = trim($_POST['username']);
+        $password = $_POST['password'];
+        
+        if (empty($username) || empty($password)) {
+            $error = 'Username dan password harus diisi!';
+        } else {
+            try {
+                $stmt = $pdo->prepare("SELECT id, username, password, role, status_pengguna, data_lengkap FROM users WHERE username = ?");
+                $stmt->execute([$username]);
+                $user = $stmt->fetch();
+                
+                if ($user && password_verify($password, $user['password'])) {
+                    if ($user['status_pengguna'] === 'Tidak Aktif') {
+                        $error = 'Akun Anda telah dinonaktifkan!';
+                    } else {
+                        $_SESSION['user_id'] = $user['id'];
+                        $_SESSION['username'] = $user['username'];
+                        $_SESSION['role'] = $user['role'];
+                        $_SESSION['data_lengkap'] = $user['data_lengkap'];
+                        
+                        // Redirect berdasarkan role dan status data
+                        if ($user['role'] === 'admin') {
+                            header('Location: admin/dashboard.php');
+                        } else {
+                            if ($user['data_lengkap']) {
+                                header('Location: warga/dashboard.php');
+                            } else {
+                                header('Location: warga/data_awal.php');
+                            }
+                        }
+                        exit;
+                    }
+                } else {
+                    $error = 'Username atau password salah!';
+                }
+            } catch (PDOException $e) {
+                $error = 'Terjadi kesalahan sistem!';
+            }
         }
     }
 }
@@ -302,12 +245,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         }
         
         .btn-secondary {
-            background: linear-gradient(135deg, #38b2ac 0%, #319795 100%);
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
             margin-top: 10px;
         }
         
         .btn-secondary:hover {
-            box-shadow: 0 15px 35px rgba(56, 178, 172, 0.4);
+            box-shadow: 0 15px 35px rgba(56, 161, 105, 0.4);
         }
         
         .error {
@@ -324,25 +267,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         
         .success {
             background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
-            color: #2d7d32;
+            color: #2f855a;
             padding: 15px 20px;
             border-radius: 12px;
             margin-bottom: 25px;
             text-align: center;
             border: 1px solid #68d391;
             font-weight: 500;
-            animation: fadeIn 0.5s ease-in-out;
         }
         
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         
         .register-link {
@@ -371,11 +308,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         
         .forgot-password-link {
             text-align: center;
-            margin-top: 15px;
+            margin: 20px 0;
         }
         
         .forgot-password-link a {
-            color: #38b2ac;
+            color: #667eea;
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
@@ -383,11 +320,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         }
         
         .forgot-password-link a:hover {
-            color: #319795;
+            color: #764ba2;
             text-decoration: underline;
         }
         
-        /* Modal Styles */
+        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -402,29 +339,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         
         .modal-content {
             background: white;
-            margin: 10% auto;
+            margin: 15% auto;
             padding: 30px;
             border-radius: 20px;
             width: 90%;
             max-width: 400px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
-            animation: modalSlideIn 0.3s ease;
-        }
-        
-        @keyframes modalSlideIn {
-            from { opacity: 0; transform: translateY(-50px); }
-            to { opacity: 1; transform: translateY(0); }
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
         }
         
         .modal-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
         
         .modal-header h2 {
             color: #2d3748;
             margin-bottom: 10px;
-            font-size: 24px;
         }
         
         .modal-header p {
@@ -433,10 +363,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         }
         
         .close {
-            color: #a0aec0;
-            float: right;
-            font-size: 28px;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
             font-weight: bold;
+            color: #a0aec0;
             cursor: pointer;
             transition: color 0.3s ease;
         }
@@ -467,7 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
             
             .modal-content {
                 margin: 20% auto;
-                padding: 25px 20px;
+                padding: 25px;
             }
         }
         
@@ -544,7 +476,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         
         <div class="forgot-password-link">
             <a href="#" id="forgotPasswordLink">
-                <i class="fas fa-key"></i> Lupa Password?
+                <i class="fab fa-whatsapp"></i> Lupa Password? Kirim ke WhatsApp
             </a>
         </div>
         
@@ -556,14 +488,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
     <!-- Modal Lupa Password -->
     <div id="forgotPasswordModal" class="modal">
         <div class="modal-content">
+            <span class="close">&times;</span>
             <div class="modal-header">
-                <span class="close">&times;</span>
-                <h2><i class="fas fa-key"></i> Reset Password</h2>
-                <p>Masukkan username Anda untuk mendapatkan password baru via WhatsApp</p>
+                <h2><i class="fab fa-whatsapp" style="color: #25D366;"></i> Lupa Password</h2>
+                <p>Masukkan username Anda. Password baru akan dikirim ke WhatsApp yang terdaftar.</p>
             </div>
             
             <form method="POST" id="forgotPasswordForm">
-                <input type="hidden" name="forgot_password" value="1">
+                <input type="hidden" name="action" value="forgot_password">
                 <div class="form-group">
                     <label for="forgot_username">Username</label>
                     <div class="input-wrapper">
@@ -572,7 +504,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-secondary" id="forgotBtn">
+                <button type="submit" class="btn btn-secondary" id="forgotPasswordBtn">
                     <span class="btn-text">
                         <i class="fab fa-whatsapp"></i> Kirim ke WhatsApp
                     </span>
@@ -585,45 +517,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) 
         // Modal functionality
         const modal = document.getElementById('forgotPasswordModal');
         const forgotLink = document.getElementById('forgotPasswordLink');
-        const closeModal = document.querySelector('.close');
-        
-        forgotLink.addEventListener('click', function(e) {
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        forgotLink.onclick = function(e) {
             e.preventDefault();
             modal.style.display = 'block';
             document.getElementById('forgot_username').focus();
-        });
-        
-        closeModal.addEventListener('click', function() {
+        }
+
+        closeBtn.onclick = function() {
             modal.style.display = 'none';
-        });
-        
-        window.addEventListener('click', function(e) {
-            if (e.target === modal) {
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
                 modal.style.display = 'none';
             }
-        });
-        
-        // Add loading animation on login form submit
+        }
+
+        // Add loading animation on form submit
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('loginBtn');
             btn.classList.add('loading');
             btn.querySelector('.btn-text').textContent = 'Memproses...';
         });
         
-        // Add loading animation on forgot password form submit
         document.getElementById('forgotPasswordForm').addEventListener('submit', function() {
-            const btn = document.getElementById('forgotBtn');
+            const btn = document.getElementById('forgotPasswordBtn');
             btn.classList.add('loading');
-            btn.querySelector('.btn-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            btn.querySelector('.btn-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
         });
         
         // Auto focus pada input username
         document.getElementById('username').focus();
-        
-        // Tutup modal jika ada success message
-        <?php if ($success): ?>
-            modal.style.display = 'none';
-        <?php endif; ?>
     </script>
 </body>
 </html>
