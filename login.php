@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Get user data with join to pendataan table
                 $stmt = $pdo->prepare("
-                    SELECT u.id, u.username, p.nama, p.no_hp 
+                    SELECT u.id, u.username, p.nama_lengkap, p.no_hp 
                     FROM users u 
                     LEFT JOIN pendataan p ON u.id = p.user_id 
                     WHERE u.username = ? AND u.status_pengguna = 'Aktif'
@@ -39,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $phone = '62' . substr($phone, 1);
                     }
                     
-                    // Use nama from pendataan table, fallback to username if nama is empty
-                    $nama_display = !empty($user['nama']) ? $user['nama'] : $user['username'];
+                    // Use nama_lengkap from pendataan table, fallback to username if nama_lengkap is empty
+                    $nama_lengkap_display = !empty($user['nama_lengkap']) ? $user['nama_lengkap'] : $user['username'];
                     
-                    $message = "Halo " . $nama_display . ",\n\n";
+                    $message = "Halo " . $nama_lengkap_display . ",\n\n";
                     $message .= "Password baru untuk akun Anda:\n";
                     $message .= "Username: " . $user['username'] . "\n";
                     $message .= "Password: " . $new_password . "\n\n";
