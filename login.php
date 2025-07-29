@@ -2,8 +2,70 @@
 require_once 'config.php';
 
 $error = '';
+$success = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle forgot password
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password'])) {
+    $username = trim($_POST['forgot_username']);
+    
+    if (empty($username)) {
+        $error = 'Username harus diisi!';
+    } else {
+        try {
+            // Cari user berdasarkan username dan ambil data dari tabel pendataan untuk mendapatkan no_hp
+            $stmt = $pdo->prepare("
+                SELECT u.id, u.username, p.no_hp, p.nama 
+                FROM users u 
+                LEFT JOIN pendataan p ON u.user_id = p.user_id 
+                WHERE u.username = ? AND u.status_pengguna = 'Aktif'
+            ");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
+            
+            if ($user && !empty($user['no_hp'])) {
+                // Generate password baru
+                $new_password = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 8);
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                
+                // Update password di database
+                $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $update_stmt->execute([$hashed_password, $user['id']]);
+                
+                // Format nomor WhatsApp (pastikan dimulai dengan 62)
+                $no_hp = $user['no_hp'];
+                if (substr($no_hp, 0, 1) === '0') {
+                    $no_hp = '62' . substr($no_hp, 1);
+                } elseif (substr($no_hp, 0, 2) !== '62') {
+                    $no_hp = '62' . $no_hp;
+                }
+                
+                // Pesan WhatsApp
+                $nama = $user['nama'] ?? $user['username'];
+                $message = "Halo {$nama},\n\n";
+                $message .= "Password Anda telah direset. Berikut adalah password baru Anda:\n\n";
+                $message .= "Username: {$user['username']}\n";
+                $message .= "Password: {$new_password}\n\n";
+                $message .= "Silakan login dan segera ganti password Anda.\n\n";
+                $message .= "Sistem Pendataan Warga";
+                
+                // URL WhatsApp
+                $wa_url = "https://wa.me/{$no_hp}?text=" . urlencode($message);
+                
+                $success = "Password baru telah dikirim ke WhatsApp Anda. <a href='{$wa_url}' target='_blank' style='color: #667eea; text-decoration: underline;'>Klik di sini untuk membuka WhatsApp</a>";
+                
+            } else if ($user && empty($user['no_hp'])) {
+                $error = 'Nomor HP tidak terdaftar! Silakan hubungi administrator.';
+            } else {
+                $error = 'Username tidak ditemukan atau akun tidak aktif!';
+            }
+        } catch (PDOException $e) {
+            $error = 'Terjadi kesalahan sistem!';
+        }
+    }
+}
+
+// Handle login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['forgot_password'])) {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
     
@@ -186,6 +248,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(0);
         }
         
+        .btn-secondary {
+            background: linear-gradient(135deg, #38b2ac 0%, #319795 100%);
+            margin-top: 10px;
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 15px 35px rgba(56, 178, 172, 0.4);
+        }
+        
         .error {
             background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
             color: #c53030;
@@ -198,10 +269,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             animation: shake 0.5s ease-in-out;
         }
         
+        .success {
+            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+            color: #2d7d32;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            text-align: center;
+            border: 1px solid #68d391;
+            font-weight: 500;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .register-link {
@@ -228,6 +316,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-decoration: underline;
         }
         
+        .forgot-password-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .forgot-password-link a {
+            color: #38b2ac;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .forgot-password-link a:hover {
+            color: #319795;
+            text-decoration: underline;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-header h2 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .modal-header p {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .close {
+            color: #a0aec0;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .close:hover {
+            color: #2d3748;
+        }
+        
         /* Responsive */
         @media (max-width: 480px) {
             .login-container {
@@ -246,6 +410,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             .login-icon i {
                 font-size: 24px;
+            }
+            
+            .modal-content {
+                margin: 20% auto;
+                padding: 25px 20px;
             }
         }
         
@@ -291,6 +460,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
         
+        <?php if ($success): ?>
+            <div class="success">
+                <i class="fas fa-check-circle"></i>
+                <?php echo $success; ?>
+            </div>
+        <?php endif; ?>
+        
         <form method="POST" id="loginForm">
             <div class="form-group">
                 <label for="username">Username</label>
@@ -313,21 +489,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </button>
         </form>
         
+        <div class="forgot-password-link">
+            <a href="#" id="forgotPasswordLink">
+                <i class="fas fa-key"></i> Lupa Password?
+            </a>
+        </div>
+        
         <div class="register-link">
             <p>Belum punya akun? <a href="regist.php">Daftar di sini</a></p>
         </div>
     </div>
 
+    <!-- Modal Lupa Password -->
+    <div id="forgotPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-key"></i> Reset Password</h2>
+                <p>Masukkan username Anda untuk mendapatkan password baru via WhatsApp</p>
+            </div>
+            
+            <form method="POST" id="forgotPasswordForm">
+                <input type="hidden" name="forgot_password" value="1">
+                <div class="form-group">
+                    <label for="forgot_username">Username</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="forgot_username" name="forgot_username" required>
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-secondary" id="forgotBtn">
+                    <span class="btn-text">
+                        <i class="fab fa-whatsapp"></i> Kirim ke WhatsApp
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // Add loading animation on form submit
+        // Modal functionality
+        const modal = document.getElementById('forgotPasswordModal');
+        const forgotLink = document.getElementById('forgotPasswordLink');
+        const closeModal = document.querySelector('.close');
+        
+        forgotLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+            document.getElementById('forgot_username').focus();
+        });
+        
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Add loading animation on login form submit
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('loginBtn');
             btn.classList.add('loading');
             btn.querySelector('.btn-text').textContent = 'Memproses...';
         });
         
+        // Add loading animation on forgot password form submit
+        document.getElementById('forgotPasswordForm').addEventListener('submit', function() {
+            const btn = document.getElementById('forgotBtn');
+            btn.classList.add('loading');
+            btn.querySelector('.btn-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+        });
+        
         // Auto focus pada input username
         document.getElementById('username').focus();
+        
+        // Tutup modal jika ada success message
+        <?php if ($success): ?>
+            modal.style.display = 'none';
+        <?php endif; ?>
     </script>
 </body>
 </html>
