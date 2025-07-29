@@ -41,17 +41,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password'])) {
                 
                 // Pesan WhatsApp
                 $nama = $user['nama'] ?? $user['username'];
-                $message = "Halo {$nama},\n\n";
-                $message .= "Password Anda telah direset. Berikut adalah password baru Anda:\n\n";
-                $message .= "Username: {$user['username']}\n";
-                $message .= "Password: {$new_password}\n\n";
-                $message .= "Silakan login dan segera ganti password Anda.\n\n";
-                $message .= "Sistem Pendataan Warga";
+                $message = "🔐 *RESET PASSWORD SISTEM PENDATAAN*\n\n";
+                $message .= "Halo *{$nama}*,\n\n";
+                $message .= "Password Anda telah berhasil direset.\n";
+                $message .= "Berikut adalah data login baru Anda:\n\n";
+                $message .= "👤 *Username:* {$user['username']}\n";
+                $message .= "🔑 *Password Baru:* {$new_password}\n\n";
+                $message .= "⚠️ *PENTING:*\n";
+                $message .= "• Segera login dan ganti password Anda\n";
+                $message .= "• Jangan bagikan password ini kepada siapapun\n";
+                $message .= "• Password ini berlaku segera setelah pesan ini diterima\n\n";
+                $message .= "🏠 *Sistem Pendataan Warga*\n";
+                $message .= "_Pesan otomatis - Harap tidak membalas pesan ini_";
                 
-                // URL WhatsApp
+                // Simpan data untuk ditampilkan (untuk debugging)
+                $_SESSION['temp_password_data'] = [
+                    'username' => $user['username'],
+                    'password' => $new_password,
+                    'no_hp' => $no_hp,
+                    'nama' => $nama
+                ];
+                
+                // OPSI 1: Menggunakan WhatsApp Web Direct (Sederhana)
                 $wa_url = "https://wa.me/{$no_hp}?text=" . urlencode($message);
                 
-                $success = "Password baru telah dikirim ke WhatsApp Anda. <a href='{$wa_url}' target='_blank' style='color: #667eea; text-decoration: underline;'>Klik di sini untuk membuka WhatsApp</a>";
+                // OPSI 2: Kirim menggunakan cURL ke WhatsApp API (Uncomment jika punya API)
+                /*
+                try {
+                    $api_url = "https://api.whatsapp.com/send"; // Ganti dengan API endpoint Anda
+                    $api_token = "YOUR_API_TOKEN"; // Token API Anda
+                    
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => $api_url,
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 30,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => json_encode([
+                            'phone' => $no_hp,
+                            'message' => $message
+                        ]),
+                        CURLOPT_HTTPHEADER => array(
+                            'Content-Type: application/json',
+                            'Authorization: Bearer ' . $api_token
+                        ),
+                    ));
+                    
+                    $response = curl_exec($curl);
+                    curl_close($curl);
+                    
+                    $success = "Password baru telah dikirim ke WhatsApp Anda (+{$no_hp}).";
+                } catch (Exception $e) {
+                    $success = "Password baru telah dibuat. <a href='{$wa_url}' target='_blank' style='color: #667eea; text-decoration: underline;'>Klik di sini untuk membuka WhatsApp dan lihat password baru</a>";
+                }
+                */
+                
+                $success = "Password baru telah dibuat untuk username: <strong>{$user['username']}</strong><br>";
+                $success .= "Password baru: <strong style='color: #e53e3e; font-family: monospace;'>{$new_password}</strong><br><br>";
+                $success .= "<a href='{$wa_url}' target='_blank' class='btn btn-secondary' style='display: inline-block; padding: 10px 20px; margin-top: 10px; text-decoration: none; border-radius: 8px; color: white;'>";
+                $success .= "<i class='fab fa-whatsapp'></i> Kirim ke WhatsApp (+{$no_hp})";
+                $success .= "</a>";
                 
             } else if ($user && empty($user['no_hp'])) {
                 $error = 'Nomor HP tidak terdaftar! Silakan hubungi administrator.';
