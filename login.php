@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Get user data with phone number from pendataan table
                 $stmt = $pdo->prepare("
-                    SELECT u.id, u.username, p.nama, p.no_hp 
+                    SELECT u.id, u.username, COALESCE(p.nama, u.username) as nama, p.no_hp 
                     FROM users u 
                     LEFT JOIN pendataan p ON u.id = p.user_id 
                     WHERE u.username = ? AND u.status_pengguna = 'Aktif'
