@@ -13,34 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Username harus diisi!';
         } else {
             try {
-                // Get user data first
-                $stmt = $pdo->prepare("SELECT id, username FROM users WHERE username = ? AND status_pengguna = 'Aktif'");
+                // Get user data with join to pendataan table
+                $stmt = $pdo->prepare("
+                    SELECT u.id, u.username, p.nama, p.no_hp 
+                    FROM users u 
+                    LEFT JOIN pendataan p ON u.id = p.user_id 
+                    WHERE u.username = ? AND u.status_pengguna = 'Aktif'
+                ");
                 $stmt->execute([$username]);
                 $user = $stmt->fetch();
-                
-                if ($user) {
-                    // Debug: Cek struktur tabel pendataan
-                    $debug_stmt = $pdo->prepare("DESCRIBE pendataan");
-                    $debug_stmt->execute();
-                    $columns = $debug_stmt->fetchAll();
-                    
-                    // Tampilkan kolom yang tersedia (untuk debug)
-                    $available_columns = array_column($columns, 'Field');
-                    echo "<pre>Kolom tersedia di tabel pendataan: " . implode(', ', $available_columns) . "</pre>";
-                    // error_log("Kolom tersedia di tabel pendataan: " . implode(', ', $available_columns));
-                    
-                    // Get pendataan data - gunakan kolom yang pasti ada
-                    $stmt2 = $pdo->prepare("SELECT no_hp FROM pendataan WHERE user_id = ?");
-                    $stmt2->execute([$user['id']]);
-                    $pendataan = $stmt2->fetch();
-                    
-                    if ($pendataan && !empty($pendataan['no_hp'])) {
-                        $user['nama'] = $user['username']; // Gunakan username sebagai nama
-                        $user['no_hp'] = $pendataan['no_hp'];
-                    } else {
-                        $user = false; // Reset jika tidak ada data pendataan atau no_hp
-                    }
-                }
                 
                 if ($user && !empty($user['no_hp'])) {
                     // Generate new password
@@ -58,7 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $phone = '62' . substr($phone, 1);
                     }
                     
-                    $message = "Halo " . $user['nama'] . ",\n\n";
+                    // Use nama from pendataan table, fallback to username if nama is empty
+                    $nama_display = !empty($user['nama']) ? $user['nama'] : $user['username'];
+                    
+                    $message = "Halo " . $nama_display . ",\n\n";
                     $message .= "Password baru untuk akun Anda:\n";
                     $message .= "Username: " . $user['username'] . "\n";
                     $message .= "Password: " . $new_password . "\n\n";
@@ -75,9 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Username tidak ditemukan atau nomor HP belum terdaftar!';
                 }
             } catch (PDOException $e) {
-                // Untuk development - tampilkan error detail
-                $error = 'Terjadi kesalahan database: ' . $e->getMessage();
-                // Untuk production, gunakan: $error = 'Terjadi kesalahan sistem!';
+                // Log error untuk debugging
+                error_log("Database error in forgot password: " . $e->getMessage());
+                $error = 'Terjadi kesalahan sistem. Silakan coba lagi nanti.';
             }
         }
     } else {
@@ -118,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Username atau password salah!';
                 }
             } catch (PDOException $e) {
-                $error = 'Terjadi kesalahan sistem: ' . $e->getMessage();
-                // Untuk production, gunakan: $error = 'Terjadi kesalahan sistem!';
+                error_log("Database error in login: " . $e->getMessage());
+                $error = 'Terjadi kesalahan sistem. Silakan coba lagi nanti.';
             }
         }
     }
@@ -367,6 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 90%;
             max-width: 400px;
             box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+            position: relative;
         }
         
         .modal-header {
@@ -463,14 +448,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($error): ?>
             <div class="error">
                 <i class="fas fa-exclamation-triangle"></i>
-                <?php echo $error; ?>
+                <?php echo htmlspecialchars($error); ?>
             </div>
         <?php endif; ?>
         
         <?php if ($success): ?>
             <div class="success">
                 <i class="fas fa-check-circle"></i>
-                <?php echo $success; ?>
+                <?php echo htmlspecialchars($success); ?>
             </div>
         <?php endif; ?>
         
@@ -478,7 +463,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-group">
                 <label for="username">Username</label>
                 <div class="input-wrapper">
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" required value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
                     <i class="fas fa-user"></i>
                 </div>
             </div>
@@ -557,6 +542,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.style.display === 'block') {
+                modal.style.display = 'none';
+            }
+        });
+
         // Add loading animation on form submit
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('loginBtn');
@@ -570,8 +562,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             btn.querySelector('.btn-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
         });
         
-        // Auto focus pada input username
+        // Auto focus pada input username jika tidak ada error/success message
+        <?php if (!$error && !$success): ?>
         document.getElementById('username').focus();
+        <?php endif; ?>
+
+        // Auto close success message after 5 seconds
+        <?php if ($success): ?>
+        setTimeout(function() {
+            const successDiv = document.querySelector('.success');
+            if (successDiv) {
+                successDiv.style.opacity = '0';
+                successDiv.style.transition = 'opacity 0.5s ease';
+                setTimeout(function() {
+                    successDiv.remove();
+                }, 500);
+            }
+        }, 5000);
+        <?php endif; ?>
     </script>
 </body>
 </html>
