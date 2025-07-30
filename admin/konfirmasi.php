@@ -41,62 +41,6 @@ function format_tanggal_waktu_indo($tanggal) {
     return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun . ' ' . $jam;
 }
 
-// Fungsi untuk mendapatkan status Midtrans berdasarkan user_bill_id
-function getMidtransStatus($user_bill_id) {
-    try {
-        // Generate order_id berdasarkan pattern yang konsisten
-        $order_id = 'BILL-' . str_pad($user_bill_id, 6, '0', STR_PAD_LEFT);
-        
-        // Coba ambil status dari Midtrans
-        $status = getMidtransTransactionStatus($order_id);
-        
-        if (isset($status['transaction_status'])) {
-            return [
-                'status' => $status['transaction_status'],
-                'payment_type' => $status['payment_type'] ?? '-',
-                'transaction_time' => $status['transaction_time'] ?? null,
-                'settlement_time' => $status['settlement_time'] ?? null,
-                'order_id' => $order_id
-            ];
-        }
-        
-        return ['status' => 'not_found', 'order_id' => $order_id];
-        
-    } catch (Exception $e) {
-        return ['status' => 'error', 'error' => $e->getMessage(), 'order_id' => $order_id ?? null];
-    }
-}
-
-// Fungsi untuk format status Midtrans ke badge
-function formatMidtransStatusBadge($midtrans_data) {
-    if (!$midtrans_data || $midtrans_data['status'] === 'error') {
-        return '<span class="badge badge-midtrans-error"><i class="fas fa-exclamation-triangle me-1"></i> Error</span>';
-    }
-    
-    if ($midtrans_data['status'] === 'not_found') {
-        return '<span class="badge badge-midtrans-not-found"><i class="fas fa-question-circle me-1"></i> Tidak Ditemukan</span>';
-    }
-    
-    $status = $midtrans_data['status'];
-    
-    switch ($status) {
-        case 'settlement':
-            return '<span class="badge badge-midtrans-success"><i class="fas fa-check me-1"></i> Berhasil</span>';
-        case 'pending':
-            return '<span class="badge badge-midtrans-pending"><i class="fas fa-clock me-1"></i> Pending</span>';
-        case 'expire':
-            return '<span class="badge badge-midtrans-expired"><i class="fas fa-times-circle me-1"></i> Expired</span>';
-        case 'cancel':
-            return '<span class="badge badge-midtrans-cancelled"><i class="fas fa-ban me-1"></i> Dibatalkan</span>';
-        case 'deny':
-            return '<span class="badge badge-midtrans-denied"><i class="fas fa-times me-1"></i> Ditolak</span>';
-        case 'failure':
-            return '<span class="badge badge-midtrans-failed"><i class="fas fa-exclamation-triangle me-1"></i> Gagal</span>';
-        default:
-            return '<span class="badge badge-midtrans-unknown"><i class="fas fa-question me-1"></i> ' . ucfirst($status) . '</span>';
-    }
-}
-
 // Proses konfirmasi/tolak pembayaran
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_konfirmasi'], $_POST['user_bill_id'], $_POST['status'])) {
     $user_bill_id = (int)$_POST['user_bill_id'];
@@ -362,44 +306,6 @@ function getMatchStatus($bill) {
     color: white;
 }
 
-/* === Midtrans Status Badges === */
-.badge-midtrans-success {
-    background-color: #059669; /* emerald-600 */
-    color: white;
-}
-.badge-midtrans-pending {
-    background-color: #d97706; /* amber-600 */
-    color: white;
-}
-.badge-midtrans-expired {
-    background-color: #dc2626; /* red-600 */
-    color: white;
-}
-.badge-midtrans-cancelled {
-    background-color: #9333ea; /* violet-600 */
-    color: white;
-}
-.badge-midtrans-denied {
-    background-color: #dc2626; /* red-600 */
-    color: white;
-}
-.badge-midtrans-failed {
-    background-color: #dc2626; /* red-600 */
-    color: white;
-}
-.badge-midtrans-not-found {
-    background-color: #6b7280; /* gray-500 */
-    color: white;
-}
-.badge-midtrans-error {
-    background-color: #dc2626; /* red-600 */
-    color: white;
-}
-.badge-midtrans-unknown {
-    background-color: #64748b; /* slate-500 */
-    color: white;
-}
-
 /* === Button & Components === */
 .btn-action {
     border-radius: 8px;
@@ -474,12 +380,6 @@ function getMatchStatus($bill) {
     color: #4f46e5;
     border-bottom-color: #4f46e5;
     background: #f1f5f9;
-}
-
-/* === Midtrans Details === */
-.midtrans-details {
-    font-size: 0.8rem;
-    line-height: 1.4;
 }
     </style>
 </head>
@@ -568,7 +468,6 @@ function getMatchStatus($bill) {
                             <th><i class="fas fa-money-bill me-1"></i> Jumlah</th>
                             <th><i class="fas fa-robot me-1"></i> Hasil OCR</th>
                             <th><i class="fas fa-check-circle me-1"></i> Status</th>
-                            <th><i class="fas fa-credit-card me-1"></i> Midtrans</th>
                             <th><i class="fas fa-calendar me-1"></i> Tanggal</th>
                             <th><i class="fas fa-clock me-1"></i> Ketepatan</th>
                             <th><i class="fas fa-image me-1"></i> Bukti</th>
@@ -581,9 +480,6 @@ function getMatchStatus($bill) {
                             $ocr_details = json_decode($bill['ocr_details'], true);
                             $match_status = getMatchStatus($bill);
                             $auto_action = ($match_status === 'Sesuai') ? 'konfirmasi' : 'tolak';
-                            
-                            // Ambil status Midtrans untuk bill ini
-                            $midtrans_status = getMidtransStatus($bill['id']);
                             ?>
                             <tr>
                                 <td>
@@ -641,33 +537,6 @@ function getMatchStatus($bill) {
                                             <i class="fas fa-hourglass-half me-1"></i> Belum OCR
                                         </span>
                                     <?php endif; ?>
-                                </td>
-                                <td>
-                                    <!-- Kolom Status Midtrans -->
-                                    <div class="midtrans-details">
-                                        <?= formatMidtransStatusBadge($midtrans_status) ?>
-                                        
-                                        <?php if ($midtrans_status && isset($midtrans_status['payment_type']) && $midtrans_status['payment_type'] !== '-'): ?>
-                                            <div class="text-muted-small mt-1">
-                                                <small><?= htmlspecialchars($midtrans_status['payment_type']) ?></small>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (isset($midtrans_status['order_id'])): ?>
-                                            <div class="text-muted-small mt-1">
-                                                <small><em><?= htmlspecialchars($midtrans_status['order_id']) ?></em></small>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (isset($midtrans_status['error'])): ?>
-                                            <div class="text-danger-small mt-1">
-                                                <small title="<?= htmlspecialchars($midtrans_status['error']) ?>">
-                                                    <i class="fas fa-exclamation-triangle me-1"></i>
-                                                    Error
-                                                </small>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
                                 </td>
                                 <td>
                                     <div class="text-muted-small">
