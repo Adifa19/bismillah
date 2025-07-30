@@ -6,10 +6,10 @@ requireLogin();
 $message = '';
 $message_type = '';
 
-function generateOrderId($user_id, $bill_id) {
-    return 'BILL_' . $user_id . '_' . $bill_id . '_' . time();
+// Fungsi untuk generate order ID yang unik
+function generateOrderId($bill_id, $user_id) {
+    return 'BILL_' . $bill_id . '_' . $user_id . '_' . time();
 }
-
 
 // Fungsi untuk membuat atau mengupdate user_bill
 function createOrUpdateUserBill($pdo, $bill_id, $user_id) {
@@ -70,7 +70,7 @@ if (isset($_POST['action'])) {
                 $user_bill_id = createOrUpdateUserBill($pdo, $bill_id, $user_id);
                 
                 // Generate order ID
-               $order_id = generateOrderId($user_id, $row['id']);
+                $order_id = generateOrderId($bill_id, $user_id);
                 
                 // Update payment token
                 $stmt = $pdo->prepare("UPDATE user_bills SET payment_token = ?, midtrans_order_id = ? WHERE id = ?");
