@@ -3,11 +3,6 @@ require_once '../config.php';
 requireLogin();
 requireAdmin();
 
-// Generate kode tagihan otomatis
-function generateKodeTagihan($user_id) {
-    $random = str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
-    return "TAG-{$random}-{$user_id}";
-}
 
 // Fungsi format tanggal Indonesia
 function format_tanggal_indo($tanggal){
@@ -205,36 +200,40 @@ if (isset($_POST['kirim_tagihan'])) {
         $pdo->beginTransaction();
         
         foreach ($target_users as $user) {
-            $kode_tagihan = generateKodeTagihan($user['id']);
-            $qr_data = json_encode([
-                'kode' => $kode_tagihan,
-                'jumlah' => $jumlah,
-                'user_id' => $user['id']
-            ]);
-            
-            // Insert ke bills
-            $stmt = $pdo->prepare("
-                INSERT INTO bills (admin_id, kode_tagihan, jumlah, deskripsi, tanggal, qr_code_data) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([$admin_id, $kode_tagihan, $jumlah, $deskripsi, $tanggal_jatuh_tempo, $qr_data]);
-            $bill_id = $pdo->lastInsertId();
-            
-            // Insert ke user_bills
-            $payment_token = bin2hex(random_bytes(16));
-            $qr_hash = hash('sha256', $qr_data);
-            
-            $stmt = $pdo->prepare("
-                INSERT INTO user_bills (bill_id, user_id, tanggal, qr_code_hash, qr_code_data, payment_token) 
-                VALUES (?, ?, CURDATE(), ?, ?, ?)
-            ");
-            $stmt->execute([$bill_id, $user['id'], $qr_hash, $qr_data, $payment_token]);
-        }
-        
-        $pdo->commit();
-        $success_message = "Tagihan berhasil dikirim ke " . count($target_users) . " warga";
-        
-    } catch (Exception $e) {
+    // 1. Insert awal ke tabel bills agar dapat bill_id
+    $stmt = $pdo->prepare("
+        INSERT INTO bills (admin_id, kode_tagihan, jumlah, deskripsi, tanggal, qr_code_data) 
+        VALUES (?, '', ?, ?, ?, '')
+    ");
+    $stmt->execute([$admin_id, $jumlah, $deskripsi, $tanggal_jatuh_tempo]);
+    $bill_id = $pdo->lastInsertId();
+
+    // 2. Generate kode tagihan Midtrans-style
+    $kode_tagihan = 'BILL_' . $admin_id . '_' . $bill_id . '_' . time();
+
+    // 3. QR data baru dengan kode tagihan ini
+    $qr_data = json_encode([
+        'kode' => $kode_tagihan,
+        'jumlah' => $jumlah,
+        'user_id' => $user['id']
+    ]);
+
+    // 4. Update kembali data bills dengan kode_tagihan & qr_code_data
+    $update_stmt = $pdo->prepare("
+        UPDATE bills SET kode_tagihan = ?, qr_code_data = ? WHERE id = ?
+    ");
+    $update_stmt->execute([$kode_tagihan, $qr_data, $bill_id]);
+
+    // 5. Insert ke user_bills
+    $payment_token = bin2hex(random_bytes(16));
+    $qr_hash = hash('sha256', $qr_data);
+
+    $stmt = $pdo->prepare("
+        INSERT INTO user_bills (bill_id, user_id, tanggal, qr_code_hash, qr_code_data, payment_token, midtrans_order_id) 
+        VALUES (?, ?, CURDATE(), ?, ?, ?, ?)
+    ");
+    $stmt->execute([$bill_id, $user['id'], $qr_hash, $qr_data, $payment_token, $kode_tagihan]);
+} catch (Exception $e) {
         $pdo->rollback();
         $error_message = "Error: " . $e->getMessage();
     }
