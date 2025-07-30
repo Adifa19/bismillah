@@ -1,26 +1,3 @@
-<?php require_once '../config.php'; requireAdmin(); // Fungsi untuk format tanggal Indonesia function format_tanggal_indo($tanggal) { if (empty($tanggal)) return '-'; $bulan = [ 1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'S
-
-pasted
-
-
-<?php session_start(); // ========== DATABASE CONFIG ========== $host = 'localhost'; $dbname = 'tetangga.id'; $username = 'root'; $password = ''; try { $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO
-
-pasted
-
-tolong tambahkan kolom status pada midtrans untuk setiap transaksinya, cukup tambahkan kolom saja di halaman konfirmasi.php ini:, dan bisa ga ya untuk status midtrans ini gausa masuk ke dalam database? dan dengan config.php:
-
-Edit
-Berdasarkan kode yang Anda berikan, saya akan membantu menambahkan kolom status Midtrans di halaman konfirmasi.php tanpa perlu menyimpan ke database. Kita akan menggunakan fungsi getMidtransTransactionStatus() yang sudah ada di config.php untuk mengambil status secara real-time.
-
-
-konfirmasi.php - Updated with Midtrans Status Column
-Kode 
-
-
-
-
-
-
 <?php
 require_once '../config.php';
 requireAdmin();
@@ -62,52 +39,6 @@ function format_tanggal_waktu_indo($tanggal) {
     $jam = date('H:i', $timestamp);
     
     return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun . ' ' . $jam;
-}
-
-// Fungsi untuk mendapatkan status Midtrans
-function getMidtransStatus($orderId) {
-    if (empty($orderId)) return null;
-    
-    try {
-        $status = getMidtransTransactionStatus($orderId);
-        return $status;
-    } catch (Exception $e) {
-        return null;
-    }
-}
-
-// Fungsi untuk format status Midtrans
-function formatMidtransStatus($status) {
-    if (!$status) {
-        return '<span class="badge badge-belum-ocr"><i class="fas fa-question me-1"></i> Tidak Diketahui</span>';
-    }
-    
-    $transactionStatus = $status['transaction_status'] ?? 'unknown';
-    $fraudStatus = $status['fraud_status'] ?? null;
-    
-    switch ($transactionStatus) {
-        case 'capture':
-            if ($fraudStatus == 'challenge') {
-                return '<span class="badge badge-warning"><i class="fas fa-exclamation-triangle me-1"></i> Challenge</span>';
-            } else if ($fraudStatus == 'accept') {
-                return '<span class="badge badge-sesuai"><i class="fas fa-check me-1"></i> Success</span>';
-            }
-            break;
-        case 'settlement':
-            return '<span class="badge badge-sesuai"><i class="fas fa-check-circle me-1"></i> Settlement</span>';
-        case 'pending':
-            return '<span class="badge badge-belum-ocr"><i class="fas fa-clock me-1"></i> Pending</span>';
-        case 'deny':
-            return '<span class="badge badge-tidak-sesuai"><i class="fas fa-ban me-1"></i> Denied</span>';
-        case 'cancel':
-            return '<span class="badge badge-tidak-sesuai"><i class="fas fa-times me-1"></i> Cancelled</span>';
-        case 'expire':
-            return '<span class="badge badge-tidak-sesuai"><i class="fas fa-clock me-1"></i> Expired</span>';
-        case 'failure':
-            return '<span class="badge badge-tidak-sesuai"><i class="fas fa-exclamation-circle me-1"></i> Failed</span>';
-        default:
-            return '<span class="badge badge-belum-ocr"><i class="fas fa-question me-1"></i> ' . ucfirst($transactionStatus) . '</span>';
-    }
 }
 
 // Proses konfirmasi/tolak pembayaran
@@ -207,7 +138,6 @@ $stmt = $pdo->query("
         ub.ocr_date_found,
         ub.ocr_details,
         ub.tanggal AS tanggal_kirim,
-        ub.midtrans_order_id,
         b.kode_tagihan,
         b.jumlah,
         b.deskripsi,
@@ -362,10 +292,6 @@ function getMatchStatus($bill) {
     background-color: #facc15; /* yellow-400 */
     color: #78350f;
 }
-.badge-warning {
-    background-color: #f59e0b; /* amber-500 */
-    color: white;
-}
 
 .badge-tepat-waktu {
     background-color: #22c55e; /* green-500 */
@@ -395,17 +321,6 @@ function getMatchStatus($bill) {
 }
 .btn-ocr:hover {
     background: linear-gradient(45deg, #e67e22, #f39c12);
-    color: white;
-}
-.btn-refresh {
-    background: linear-gradient(45deg, #3498db, #2980b9);
-    color: white;
-    border: none;
-    font-size: 0.7rem;
-    padding: 4px 8px;
-}
-.btn-refresh:hover {
-    background: linear-gradient(45deg, #2980b9, #1f4e79);
     color: white;
 }
 .image-preview {
@@ -465,11 +380,6 @@ function getMatchStatus($bill) {
     color: #4f46e5;
     border-bottom-color: #4f46e5;
     background: #f1f5f9;
-}
-
-.midtrans-details {
-    font-size: 0.8rem;
-    line-height: 1.4;
 }
     </style>
 </head>
@@ -556,7 +466,6 @@ function getMatchStatus($bill) {
                             <th><i class="fas fa-barcode me-1"></i> Kode Tagihan</th>
                             <th><i class="fas fa-align-left me-1"></i> Deskripsi</th>
                             <th><i class="fas fa-money-bill me-1"></i> Jumlah</th>
-                            <th><i class="fas fa-credit-card me-1"></i> Status Midtrans</th>
                             <th><i class="fas fa-robot me-1"></i> Hasil OCR</th>
                             <th><i class="fas fa-check-circle me-1"></i> Status</th>
                             <th><i class="fas fa-calendar me-1"></i> Tanggal</th>
@@ -571,12 +480,6 @@ function getMatchStatus($bill) {
                             $ocr_details = json_decode($bill['ocr_details'], true);
                             $match_status = getMatchStatus($bill);
                             $auto_action = ($match_status === 'Sesuai') ? 'konfirmasi' : 'tolak';
-                            
-                            // Get Midtrans status
-                            $midtrans_status = null;
-                            if (!empty($bill['midtrans_order_id'])) {
-                                $midtrans_status = getMidtransStatus($bill['midtrans_order_id']);
-                            }
                             ?>
                             <tr>
                                 <td>
@@ -593,33 +496,6 @@ function getMatchStatus($bill) {
                                 </td>
                                 <td>
                                     <strong class="text-primary">Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></strong>
-                                </td>
-                                <td>
-                                    <?php if (!empty($bill['midtrans_order_id'])): ?>
-                                        <div class="midtrans-details">
-                                            <div class="mb-2">
-                                                <?= formatMidtransStatus($midtrans_status) ?>
-                                            </div>
-                                            <?php if ($midtrans_status): ?>
-                                                <div class="text-muted-small">
-                                                    <div><strong>Order ID:</strong><br>
-                                                        <code style="font-size: 0.7rem;"><?= htmlspecialchars($bill['midtrans_order_id']) ?></code>
-                                                    </div>
-                                                    <?php if (isset($midtrans_status['payment_type'])): ?>
-                                                        <div><strong>Payment:</strong> <?= ucfirst($midtrans_status['payment_type']) ?></div>
-                                                    <?php endif; ?>
-                                                    <?php if (isset($midtrans_status['transaction_time'])): ?>
-                                                        <div><strong>Waktu:</strong><br><?= format_tanggal_waktu_indo($midtrans_status['transaction_time']) ?></div>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endif; ?>
-                                            <button class="btn btn-refresh btn-sm mt-1" onclick="location.reload()">
-                                                <i class="fas fa-sync-alt me-1"></i> Refresh
-                                            </button>
-                                        </div>
-                                    <?php else: ?>
-                                        <span class="text-muted"><em>Manual Payment</em></span>
-                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($ocr_details): ?>
