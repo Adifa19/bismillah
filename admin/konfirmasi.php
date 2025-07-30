@@ -466,8 +466,6 @@ function getMatchStatus($bill) {
                             <th><i class="fas fa-barcode me-1"></i> Kode Tagihan</th>
                             <th><i class="fas fa-align-left me-1"></i> Deskripsi</th>
                             <th><i class="fas fa-money-bill me-1"></i> Jumlah</th>
-			<th><i class="fas fa-money me-1"></i> Midtrans</th>
-
                             <th><i class="fas fa-robot me-1"></i> Hasil OCR</th>
                             <th><i class="fas fa-check-circle me-1"></i> Status</th>
                             <th><i class="fas fa-calendar me-1"></i> Tanggal</th>
@@ -499,23 +497,6 @@ function getMatchStatus($bill) {
                                 <td>
                                     <strong class="text-primary">Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></strong>
                                 </td>
-<td>
-                        <?php
-                        try {
-                            $status = getMidtransTransactionStatus($row['kode_tagihan']);
-                            $status_text = isset($status['transaction_status']) ? $status['transaction_status'] : 'unknown';
-                            $badge = match($status_text) {
-                                'settlement' => 'success',
-                                'pending' => 'warning',
-                                'expire', 'cancel' => 'danger',
-                                default => 'secondary'
-                            };
-                            echo "<span class='badge bg-$badge'>$status_text</span>";
-                        } catch (Exception $e) {
-                            echo "<span class='text-danger'>Gagal ambil status</span>";
-                        }
-                        ?>
-                    </td>
                                 <td>
                                     <?php if ($ocr_details): ?>
                                         <div class="ocr-details">
