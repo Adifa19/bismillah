@@ -525,8 +525,8 @@ function getMatchStatus($bill) {
                                 </td>
                                 <?php
 $status_midtrans = '-';
-if (!empty($row['kode_tagihan'])) {
-    $status = getMidtransStatus($row['kode_tagihan']);
+if (!empty($bill['kode_tagihan'])) {
+    $status = getMidtransStatus($bill['kode_tagihan']);
     if ($status == 'settlement') {
         $status_midtrans = '<span class="badge bg-success">Settlement</span>';
     } elseif ($status == 'pending') {
