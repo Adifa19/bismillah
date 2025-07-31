@@ -490,17 +490,17 @@ function getMatchStatus($bill) {
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-user me-1"></i> Username</th>
-                            <th><i class="fas fa-barcode me-1"></i> Kode Tagihan</th>
-                            <th><i class="fas fa-align-left me-1"></i> Deskripsi</th>
-                            <th><i class="fas fa-money-bill me-1"></i> Jumlah</th>
+                            <th> Username</th>
+                            <th> Kode Tagihan</th>
+                            <th></i> Deskripsi</th>
+                            <th>Jumlah</th>
                             <th>Status Midtrans</th>
-                            <th><i class="fas fa-robot me-1"></i> Hasil OCR</th>
-                            <th><i class="fas fa-check-circle me-1"></i> Status</th>
-                            <th><i class="fas fa-calendar me-1"></i> Tanggal</th>
-                            <th><i class="fas fa-clock me-1"></i> Ketepatan</th>
-                            <th><i class="fas fa-image me-1"></i> Bukti</th>
-                            <th><i class="fas fa-cogs me-1"></i> Aksi</th>
+                            <th>Hasil OCR</th>
+                            <th> Status</th>
+                            <th>Tanggal</th>
+                            <th>Ketepatan</th>
+                            <th>Bukti</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
