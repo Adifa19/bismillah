@@ -1,6 +1,31 @@
 <?php
 require_once '../config.php';
 requireAdmin();
+function getMidtransStatus($order_id) {
+    $url = "https://api.midtrans.com/v2/" . $order_id . "/status";
+    $serverKey = MIDTRANS_SERVER_KEY;
+    $auth = base64_encode($serverKey . ':');
+
+    $curl = curl_init($url);
+    curl_setopt_array($curl, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Basic ' . $auth
+        ]
+    ]);
+
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+
+    if ($httpCode === 200) {
+        $data = json_decode($response, true);
+        return $data['transaction_status'] ?? 'unknown';
+    } else {
+        return 'error';
+    }
+}
 
 // Fungsi untuk format tanggal Indonesia
 function format_tanggal_indo($tanggal) {
@@ -466,6 +491,7 @@ function getMatchStatus($bill) {
                             <th><i class="fas fa-barcode me-1"></i> Kode Tagihan</th>
                             <th><i class="fas fa-align-left me-1"></i> Deskripsi</th>
                             <th><i class="fas fa-money-bill me-1"></i> Jumlah</th>
+                            <th>Status Midtrans</th>
                             <th><i class="fas fa-robot me-1"></i> Hasil OCR</th>
                             <th><i class="fas fa-check-circle me-1"></i> Status</th>
                             <th><i class="fas fa-calendar me-1"></i> Tanggal</th>
@@ -497,6 +523,27 @@ function getMatchStatus($bill) {
                                 <td>
                                     <strong class="text-primary">Rp <?= number_format($bill['jumlah'], 0, ',', '.') ?></strong>
                                 </td>
+                                <?php
+$status_midtrans = '-';
+if (!empty($row['kode_tagihan'])) {
+    $status = getMidtransStatus($row['kode_tagihan']);
+    if ($status == 'settlement') {
+        $status_midtrans = '<span class="badge bg-success">Settlement</span>';
+    } elseif ($status == 'pending') {
+        $status_midtrans = '<span class="badge bg-warning text-dark">Pending</span>';
+    } elseif ($status == 'expire') {
+        $status_midtrans = '<span class="badge bg-danger">Expired</span>';
+    } elseif ($status == 'cancel') {
+        $status_midtrans = '<span class="badge bg-secondary">Cancelled</span>';
+    } else {
+        $status_midtrans = '<span class="badge bg-light text-dark">' . htmlspecialchars($status) . '</span>';
+    }
+} else {
+    $status_midtrans = '<span class="text-muted">-</span>';
+}
+?>
+<td><?= $status_midtrans ?></td>
+
                                 <td>
                                     <?php if ($ocr_details): ?>
                                         <div class="ocr-details">
