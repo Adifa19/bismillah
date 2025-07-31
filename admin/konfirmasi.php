@@ -2,7 +2,7 @@
 require_once '../config.php';
 requireAdmin();
 function getMidtransStatus($order_id) {
-    $url = "https://api.midtrans.com/v2/" . $order_id . "/status";
+    $url = "https://api.sandbox.midtrans.com/v2/" . $order_id . "/status"; // HARUS SANDBOX
     $serverKey = MIDTRANS_SERVER_KEY;
     $auth = base64_encode($serverKey . ':');
 
@@ -18,6 +18,9 @@ function getMidtransStatus($order_id) {
     $response = curl_exec($curl);
     $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+
+    // debug optional
+    // echo "<pre>Order ID: $order_id\nHTTP Code: $httpCode\nResponse: $response</pre>";
 
     if ($httpCode === 200) {
         $data = json_decode($response, true);
