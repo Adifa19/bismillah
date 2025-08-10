@@ -68,20 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $stmt->execute([$no_kk]);
                         }
                         
-                        // Create temporary user for this NIK
+                        // Create temporary user for this NIK - DIUBAH MENJADI 'Aktif'
                         $temp_username = 'temp_' . $nik;
                         $temp_password = password_hash($nik, PASSWORD_DEFAULT); // Default password is NIK
                         
-                        $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna) VALUES (?, ?, ?, 'Tidak Aktif')");
+                        $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna) VALUES (?, ?, ?, 'Aktif')");
                         $stmt->execute([$temp_username, $temp_password, $no_kk]);
                         $user_id = $pdo->lastInsertId();
                         
-                        // Insert into pendataan
-                        $stmt = $pdo->prepare("INSERT INTO pendataan (user_id, no_kk, nik, nama_lengkap, jenis_kelamin, alamat, status_warga, is_registered) VALUES (?, ?, ?, ?, ?, ?, 'Tidak Aktif', 0)");
+                        // Insert into pendataan - DIUBAH MENJADI 'Aktif'
+                        $stmt = $pdo->prepare("INSERT INTO pendataan (user_id, no_kk, nik, nama_lengkap, jenis_kelamin, alamat, status_warga, is_registered) VALUES (?, ?, ?, ?, ?, ?, 'Aktif', 0)");
                         $stmt->execute([$user_id, $no_kk, $nik, $nama_lengkap, $jenis_kelamin, $alamat]);
                         
                         $pdo->commit();
-                        $message = "NIK berhasil ditambahkan. Warga dapat mendaftar dengan NIK: $nik";
+                        $message = "NIK berhasil ditambahkan dengan status AKTIF. Warga dapat mendaftar dengan NIK: $nik";
                     } catch (Exception $e) {
                         $pdo->rollback();
                         $error = "Error: " . $e->getMessage();
@@ -1270,3 +1270,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
