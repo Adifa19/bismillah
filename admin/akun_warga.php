@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         $temp_password = password_hash($nik, PASSWORD_DEFAULT); // Default password is NIK
                         
-                        $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna) VALUES (?, ?, ?, 'Tidak Aktif')");
+                        $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna) VALUES (?, ?, ?, 'Aktif')");
                         $stmt->execute([$temp_username, $temp_password, $no_kk]);
                         $user_id = $pdo->lastInsertId();
                         
@@ -1281,3 +1281,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </body>
 
 </html>
+
