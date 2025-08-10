@@ -68,30 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $stmt->execute([$no_kk]);
                         }
                         
-                        // Create temporary username (shortened)
-                        $temp_username = 'u' . substr($nik, -8); // ex: u12345678
+                        // Create temporary user for this NIK
+                        $temp_username = 'temp_' . $nik;
+                        $temp_password = password_hash($nik, PASSWORD_DEFAULT); // Default password is NIK
                         
-                        // Check if username already exists, if yes add suffix
-                        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-                        $stmt->execute([$temp_username]);
-                        if ($stmt->fetch()) {
-                            // Add random suffix
-                            $temp_username = 'u' . substr($nik, -6) . rand(10, 99);
-                        }
-                        
-                        $temp_password = password_hash($nik, PASSWORD_DEFAULT); // Password default = NIK
-                        
-                        // Insert user dengan status_pengguna 'Aktif'
-                        $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna, role) VALUES (?, ?, ?, 'Aktif', 'user')");
+                        $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna) VALUES (?, ?, ?, 'Tidak Aktif')");
                         $stmt->execute([$temp_username, $temp_password, $no_kk]);
                         $user_id = $pdo->lastInsertId();
                         
-                        // Insert pendataan dengan status_warga 'Aktif' (sinkron dengan users.status_pengguna)
-                        $stmt = $pdo->prepare("INSERT INTO pendataan (user_id, no_kk, nik, nama_lengkap, jenis_kelamin, alamat, status_warga, is_registered) VALUES (?, ?, ?, ?, ?, ?, 'Aktif', 0)");
+                        // Insert into pendataan
+                        $stmt = $pdo->prepare("INSERT INTO pendataan (user_id, no_kk, nik, nama_lengkap, jenis_kelamin, alamat, status_warga, is_registered) VALUES (?, ?, ?, ?, ?, ?, 'Tidak Aktif', 0)");
                         $stmt->execute([$user_id, $no_kk, $nik, $nama_lengkap, $jenis_kelamin, $alamat]);
                         
                         $pdo->commit();
-                        $message = "NIK berhasil ditambahkan. Username temporary: $temp_username (Password default: NIK)";
+                        $message = "NIK berhasil ditambahkan. Warga dapat mendaftar dengan NIK: $nik";
                     } catch (Exception $e) {
                         $pdo->rollback();
                         $error = "Error: " . $e->getMessage();
@@ -121,15 +111,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $pdo->beginTransaction();
                     
-                    // Update status_pengguna di tabel users
+                    // Update user status
                     $stmt = $pdo->prepare("UPDATE users SET status_pengguna = ? WHERE id = ?");
                     $stmt->execute([$new_status, $user_id]);
                     
-                    // Update status_warga di tabel pendataan agar sinkron
+                    // Update pendataan status
                     $stmt = $pdo->prepare("UPDATE pendataan SET status_warga = ? WHERE user_id = ?");
                     $stmt->execute([$new_status, $user_id]);
                     
-                    $message = ($new_status === 'Tidak Aktif') ? "Pengguna berhasil dinonaktifkan" : "Pengguna berhasil diaktifkan";
+                    if ($new_status === 'Tidak Aktif') {
+                        $message = "Pengguna berhasil dinonaktifkan";
+                    } else {
+                        $message = "Pengguna berhasil diaktifkan";
+                    }
                     
                     $pdo->commit();
                 } catch (Exception $e) {
@@ -141,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Function untuk format tanggal Indonesia
+// Function untuk format tanggal Indonesia - DIPERBAIKI
 function formatTanggalIndonesia($tanggal) {
     $bulan = array(
         1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -157,8 +151,24 @@ function formatTanggalIndonesia($tanggal) {
     return $hari . ' ' . $bulan_nama . ' ' . $tahun;
 }
 
-// Ambil data untuk statistik dan filter (struktur query dan proses deduplikasi sesuai kebutuhan kamu)
-// Query tanpa filter untuk statistik
+// Function untuk format tanggal dengan jam (opsional)
+function formatTanggalIndonesiaLengkap($tanggal) {
+    $bulan = array(
+        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+    );
+    
+    $timestamp = strtotime($tanggal);
+    $hari = date('j', $timestamp);
+    $bulan_nama = $bulan[date('n', $timestamp)];
+    $tahun = date('Y', $timestamp);
+    $jam = date('H:i', $timestamp);
+    
+    return $hari . ' ' . $bulan_nama . ' ' . $tahun . ' ' . $jam;
+}
+
+// PERTAMA: Ambil semua data untuk stats cards (tanpa filter)
 $stmt_all = $pdo->prepare("
     SELECT DISTINCT
         u.id, 
@@ -184,44 +194,55 @@ $stmt_all = $pdo->prepare("
 $stmt_all->execute();
 $all_users_raw = $stmt_all->fetchAll();
 
-// Hilangkan duplikasi kombinasi nik + no_kk
+// Proses untuk menghilangkan duplikasi dari data semua users
 $all_users_unique = [];
 $all_processed_niks = [];
+
 foreach ($all_users_raw as $user) {
     $nik = $user['nik'];
     $no_kk = $user['no_kk'];
+    
+    // Cek apakah kombinasi NIK dan No. KK sudah diproses
     $combination_key = $nik . '_' . $no_kk;
+    
     if (!isset($all_processed_niks[$combination_key])) {
         $all_users_unique[] = $user;
         $all_processed_niks[$combination_key] = true;
     }
 }
+
+// Data lengkap untuk stats cards
 $all_users = $all_users_unique;
 
-// Ambil filter dari GET
-$filter_status = $_GET['status'] ?? '';
-$filter_registered = $_GET['registered'] ?? '';
-$filter_gender = $_GET['gender'] ?? '';
+// KEDUA: Ambil parameter filter dari GET
+$filter_status = isset($_GET['status']) ? $_GET['status'] : '';
+$filter_registered = isset($_GET['registered']) ? $_GET['registered'] : '';
+$filter_gender = isset($_GET['gender']) ? $_GET['gender'] : '';
 $filter_search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Bangun where clause untuk filter tabel
+// Modifikasi query untuk menambahkan filter pada tampilan tabel
 $whereConditions = [
     "u.role = 'user'",
     "p.nik IS NOT NULL",
     "p.no_kk IS NOT NULL"
 ];
+
 if (!empty($filter_status)) {
     $whereConditions[] = "u.status_pengguna = :filter_status";
 }
+
 if (!empty($filter_registered)) {
     $whereConditions[] = "p.is_registered = :filter_registered";
 }
+
 if (!empty($filter_gender)) {
     $whereConditions[] = "p.jenis_kelamin = :filter_gender";
 }
+
 if (!empty($filter_search)) {
     $whereConditions[] = "(p.nama_lengkap LIKE :search OR p.nik LIKE :search OR u.username LIKE :search OR p.no_kk LIKE :search)";
 }
+
 $whereClause = implode(' AND ', $whereConditions);
 
 $stmt = $pdo->prepare("
@@ -245,7 +266,7 @@ $stmt = $pdo->prepare("
     ORDER BY u.created_at DESC
 ");
 
-// Bind parameters jika ada filter
+// Bind parameters
 if (!empty($filter_status)) {
     $stmt->bindParam(':filter_status', $filter_status);
 }
@@ -263,18 +284,24 @@ if (!empty($filter_search)) {
 $stmt->execute();
 $filtered_users = $stmt->fetchAll();
 
-// Hilangkan duplikasi manual untuk data filter
+// Proses untuk menghilangkan duplikasi secara manual untuk data filtered
 $unique_filtered_users = [];
 $processed_filtered_niks = [];
+
 foreach ($filtered_users as $user) {
     $nik = $user['nik'];
     $no_kk = $user['no_kk'];
+    
+    // Cek apakah kombinasi NIK dan No. KK sudah diproses
     $combination_key = $nik . '_' . $no_kk;
+    
     if (!isset($processed_filtered_niks[$combination_key])) {
         $unique_filtered_users[] = $user;
         $processed_filtered_niks[$combination_key] = true;
     }
 }
+
+// Data yang ditampilkan di tabel (dengan filter)
 $users = $unique_filtered_users;
 
 ?>
@@ -1242,7 +1269,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-
 </html>
-
-
