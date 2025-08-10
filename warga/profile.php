@@ -521,29 +521,27 @@ function formatTanggalIndonesia($tanggal) {
         </div>
         <?php endif; ?>
         
-         <?php if (!empty($data['foto_ktp'])): ?>
-    <?php 
-        // Buang '../' dan ambil basename (nama file saja)
-        $ktp_file = basename(str_replace('../uploads/', '', $data['foto_ktp']));
-        $ktp_url = '/uploads/' . rawurlencode($ktp_file);
-    ?>
-    <img src="<?php echo htmlspecialchars($ktp_url); ?>" alt="Foto KTP" />
-<?php endif; ?>
-
-<?php if (!empty($data['foto_kk'])): ?>
-    <?php 
-        $kk_file = basename(str_replace('../uploads/', '', $data['foto_kk']));
-        $kk_url = '/uploads/' . rawurlencode($kk_file);
-    ?>
-    <img src="<?php echo htmlspecialchars($kk_url); ?>" alt="Foto KK" />
-<?php endif; ?>
-
+        <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
+        <div class="data-card photo-section">
+            <div class="card-title">Dokumen</div> <br>
+            
+            <div class="photo-grid">
+                <?php if ($data['foto_ktp']): ?>
+                <div class="photo-card">
+                    <img src="<?php echo htmlspecialchars($data['foto_ktp']); ?>" alt="Foto KTP">
+                    <div class="photo-label">Foto KTP</div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if ($data['foto_kk']): ?>
+                <div class="photo-card">
+                    <img src="<?php echo htmlspecialchars($data['foto_kk']); ?>" alt="Foto KK">
+                    <div class="photo-label">Foto Kartu Keluarga</div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </body>
 </html>
-
-
-
-
-
-
