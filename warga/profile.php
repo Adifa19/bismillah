@@ -45,6 +45,10 @@ function formatTanggalIndonesia($tanggal) {
     
     return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
 }
+
+var_dump($data['foto_ktp']);
+var_dump($data['foto_kk']);
+exit;
 ?>
 
 <!DOCTYPE html>
@@ -540,6 +544,7 @@ function formatTanggalIndonesia($tanggal) {
     </div>
 </body>
 </html>
+
 
 
 
