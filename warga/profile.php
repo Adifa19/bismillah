@@ -522,26 +522,35 @@ function formatTanggalIndonesia($tanggal) {
         <?php endif; ?>
         
         <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
-        <div class="data-card photo-section">
-            <div class="card-title">Dokumen</div> <br>
-            
-            <div class="photo-grid">
-                <?php if ($data['foto_ktp']): ?>
-                <div class="photo-card">
-                    <img src="<?php echo htmlspecialchars($data['foto_ktp']); ?>" alt="Foto KTP">
-                    <div class="photo-label">Foto KTP</div>
-                </div>
-                <?php endif; ?>
-                
-                <?php if ($data['foto_kk']): ?>
-                <div class="photo-card">
-                    <img src="<?php echo htmlspecialchars($data['foto_kk']); ?>" alt="Foto KK">
-                    <div class="photo-label">Foto Kartu Keluarga</div>
-                </div>
-                <?php endif; ?>
-            </div>
+<div class="data-card photo-section">
+    <div class="card-title">Dokumen</div> <br>
+    
+    <div class="photo-grid">
+        <?php if ($data['foto_ktp']): ?>
+        <div class="photo-card">
+            <?php 
+            // Perbaiki path untuk menampilkan foto
+            $ktp_path = str_replace('../', '', $data['foto_ktp']); 
+            ?>
+            <img src="<?php echo htmlspecialchars($ktp_path); ?>" alt="Foto KTP" onerror="this.style.display='none'; this.nextElementSibling.innerHTML='Foto KTP tidak dapat dimuat';">
+            <div class="photo-label">Foto KTP</div>
+        </div>
+        <?php endif; ?>
+        
+        <?php if ($data['foto_kk']): ?>
+        <div class="photo-card">
+            <?php 
+            // Perbaiki path untuk menampilkan foto
+            $kk_path = str_replace('../', '', $data['foto_kk']); 
+            ?>
+            <img src="<?php echo htmlspecialchars($kk_path); ?>" alt="Foto KK" onerror="this.style.display='none'; this.nextElementSibling.innerHTML='Foto KK tidak dapat dimuat';">
+            <div class="photo-label">Foto Kartu Keluarga</div>
         </div>
         <?php endif; ?>
     </div>
+</div>
+<?php endif; ?>
+    </div>
 </body>
 </html>
+
