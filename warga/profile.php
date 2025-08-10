@@ -8,7 +8,13 @@ if (isAdmin()) {
     exit;
 }
 
-// Ambil data user dan pendataan - PERBAIKAN: Hapus redirect data_lengkap
+// Redirect jika belum lengkap data
+if (!$_SESSION['data_lengkap']) {
+    header('Location: profile.php');
+    exit;
+}
+
+// Ambil data user dan pendataan
 $stmt = $pdo->prepare("
     SELECT u.username, u.no_kk, p.*, 
            (SELECT COUNT(*) FROM anggota_keluarga WHERE pendataan_id = p.id) as total_anggota
@@ -19,22 +25,13 @@ $stmt = $pdo->prepare("
 $stmt->execute([$_SESSION['user_id']]);
 $data = $stmt->fetch();
 
-// Debug: Tampilkan path foto untuk troubleshooting (hapus setelah berhasil)
-// echo "<pre>Foto KTP: " . htmlspecialchars($data['foto_ktp']) . "</pre>";
-// echo "<pre>Foto KK: " . htmlspecialchars($data['foto_kk']) . "</pre>";
-
-// Ambil data anggota keluarga jika ada data pendataan
-$anggota_keluarga = [];
-if ($data && $data['id']) {
-    $stmt = $pdo->prepare("SELECT * FROM anggota_keluarga WHERE pendataan_id = ? ORDER BY status_hubungan");
-    $stmt->execute([$data['id']]);
-    $anggota_keluarga = $stmt->fetchAll();
-}
+// Ambil data anggota keluarga
+$stmt = $pdo->prepare("SELECT * FROM anggota_keluarga WHERE pendataan_id = ? ORDER BY status_hubungan");
+$stmt->execute([$data['id']]);
+$anggota_keluarga = $stmt->fetchAll();
 
 // Fungsi untuk format tanggal Indonesia
 function formatTanggalIndonesia($tanggal) {
-    if (!$tanggal) return '-';
-    
     $bulan = [
         1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
         5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
@@ -48,24 +45,6 @@ function formatTanggalIndonesia($tanggal) {
     
     return $hari . ' ' . $bulan[$bulan_num] . ' ' . $tahun;
 }
-
-// Fungsi untuk validasi dan perbaikan path foto
-function getImagePath($photoPath) {
-    if (!$photoPath) return null;
-    
-    // Jika path sudah dimulai dengan uploads/, gunakan langsung
-    if (strpos($photoPath, 'uploads/') === 0) {
-        return '../' . $photoPath;
-    }
-    
-    // Jika path dimulai dengan ../uploads/, gunakan langsung
-    if (strpos($photoPath, '../uploads/') === 0) {
-        return $photoPath;
-    }
-    
-    // Jika hanya nama file, tambahkan path lengkap
-    return '../uploads/' . $photoPath;
-}
 ?>
 
 <!DOCTYPE html>
@@ -73,7 +52,7 @@ function getImagePath($photoPath) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Sistem Pendataan</title>
+    <title>Dashboard - Sistem Pendataan</title>
     <style>
         * {
             margin: 0;
@@ -375,36 +354,6 @@ function getImagePath($photoPath) {
             color: #333;
         }
         
-        /* Style untuk pesan jika belum ada data */
-        .no-data-message {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .no-data-message h2 {
-            color: #ff6b6b;
-            margin-bottom: 15px;
-        }
-        
-        .no-data-message p {
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
-        .complete-profile-btn {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            color: white;
-            padding: 12px 25px;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        
         @media (max-width: 768px) {
             .nav-container {
                 flex-direction: column;
@@ -444,29 +393,19 @@ function getImagePath($photoPath) {
             <p>Berikut adalah informasi lengkap data Anda dalam sistem</p>
         </div>
         
-        <?php if (!$data || !$data['nama_lengkap']): ?>
-        <!-- Pesan jika belum ada data -->
-        <div class="no-data-message">
-            <h2>Data Belum Lengkap</h2>
-            <p>Silakan lengkapi data pribadi Anda terlebih dahulu untuk dapat menggunakan sistem ini.</p>
-            <a href="data_awal.php" class="complete-profile-btn">Lengkapi Data Sekarang</a>
-        </div>
-        
-        <?php else: ?>
-        <!-- Tampilkan data jika sudah ada -->
         <div class="stats-grid">
             <div class="stat-card primary">
-                <div class="stat-number"><?php echo $data['total_anggota'] ?? 0; ?></div>
+                <div class="stat-number"><?php echo $data['total_anggota']; ?></div>
                 <div class="stat-label">Anggota Keluarga</div>
             </div>
             
             <div class="stat-card success">
-                <div class="stat-number"><?php echo $data['status_warga'] ?? 'Belum Set'; ?></div>
+                <div class="stat-number"><?php echo $data['status_warga']; ?></div>
                 <div class="stat-label">Status Warga</div>
             </div>
             
             <div class="stat-card info">
-                <div class="stat-number"><?php echo $data['no_kk'] ? substr($data['no_kk'], -4) : '0000'; ?></div>
+                <div class="stat-number"><?php echo substr($data['no_kk'], -4); ?></div>
                 <div class="stat-label">Nomor KK (4 digit terakhir)</div>
             </div>
         </div>
@@ -487,27 +426,27 @@ function getImagePath($photoPath) {
                 
                 <div class="data-item">
                     <span class="data-label">NIK:</span>
-                    <span class="data-value"><?php echo $data['nik'] ?? '-'; ?></span>
+                    <span class="data-value"><?php echo $data['nik']; ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">Nama Lengkap:</span>
-                    <span class="data-value"><?php echo htmlspecialchars($data['nama_lengkap'] ?? '-'); ?></span>
+                    <span class="data-value"><?php echo htmlspecialchars($data['nama_lengkap']); ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">Tanggal Lahir:</span>
-                    <span class="data-value"><?php echo $data['tanggal_lahir'] ? date('d/m/Y', strtotime($data['tanggal_lahir'])) : '-'; ?></span>
+                    <span class="data-value"><?php echo date('d/m/Y', strtotime($data['tanggal_lahir'])); ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">Jenis Kelamin:</span>
-                    <span class="data-value"><?php echo $data['jenis_kelamin'] ?? '-'; ?></span>
+                    <span class="data-value"><?php echo $data['jenis_kelamin']; ?></span>
                 </div>
                 
                 <div class="data-item">
-                    <span class="data-label">Pekerjaan:</span>
-                    <span class="data-value"><?php echo $data['pekerjaan'] ?? '-'; ?></span>
+                    <span class="data-label">Pekerjaan  :</span>
+                    <span class="data-value"><?php echo $data['pekerjaan']; ?></span>
                 </div>
             </div>
             
@@ -516,27 +455,27 @@ function getImagePath($photoPath) {
                 
                 <div class="data-item">
                     <span class="data-label">Nomor KK:</span>
-                    <span class="data-value"><?php echo $data['no_kk'] ?? '-'; ?></span>
+                    <span class="data-value"><?php echo $data['no_kk']; ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">Alamat:</span>
-                    <span class="data-value"><?php echo htmlspecialchars($data['alamat'] ?? '-'); ?></span>
+                    <span class="data-value"><?php echo htmlspecialchars($data['alamat']); ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">No. Telepon:</span>
-                    <span class="data-value"><?php echo htmlspecialchars($data['no_telp'] ?? '-'); ?></span>
+                    <span class="data-value"><?php echo htmlspecialchars($data['no_telp']); ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">Username:</span>
-                    <span class="data-value"><?php echo htmlspecialchars($data['username'] ?? '-'); ?></span>
+                    <span class="data-value"><?php echo htmlspecialchars($data['username']); ?></span>
                 </div>
                 
                 <div class="data-item">
                     <span class="data-label">Terdaftar:</span>
-                    <span class="data-value"><?php echo $data['created_at'] ? date('d/m/Y', strtotime($data['created_at'])) : '-'; ?></span>
+                    <span class="data-value"><?php echo date('d/m/Y', strtotime($data['created_at'])); ?></span>
                 </div>
             </div>
         </div>
@@ -582,47 +521,27 @@ function getImagePath($photoPath) {
         </div>
         <?php endif; ?>
         
-        <?php 
-        // PERBAIKAN UTAMA: Validasi dan perbaikan path foto
-        $foto_ktp_path = getImagePath($data['foto_ktp']);
-        $foto_kk_path = getImagePath($data['foto_kk']);
-        ?>
-        
-        <?php if ($foto_ktp_path || $foto_kk_path): ?>
+        <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
         <div class="data-card photo-section">
             <div class="card-title">Dokumen</div> <br>
             
             <div class="photo-grid">
-                <?php if ($foto_ktp_path && file_exists($foto_ktp_path)): ?>
+                <?php if ($data['foto_ktp']): ?>
                 <div class="photo-card">
-                    <img src="<?php echo htmlspecialchars($foto_ktp_path); ?>" alt="Foto KTP" 
-                         onerror="this.style.display='none'; this.parentNode.innerHTML='<p style=\'color: #ff6b6b; padding: 20px;\'>Foto KTP tidak dapat dimuat</p>';">
+                    <img src="<?php echo htmlspecialchars($data['foto_ktp']); ?>" alt="Foto KTP">
                     <div class="photo-label">Foto KTP</div>
-                </div>
-                <?php elseif ($data['foto_ktp']): ?>
-                <div class="photo-card">
-                    <p style="color: #ff6b6b; padding: 20px;">Foto KTP tidak ditemukan<br>
-                    <small>Path: <?php echo htmlspecialchars($data['foto_ktp']); ?></small></p>
                 </div>
                 <?php endif; ?>
                 
-                <?php if ($foto_kk_path && file_exists($foto_kk_path)): ?>
+                <?php if ($data['foto_kk']): ?>
                 <div class="photo-card">
-                    <img src="<?php echo htmlspecialchars($foto_kk_path); ?>" alt="Foto KK"
-                         onerror="this.style.display='none'; this.parentNode.innerHTML='<p style=\'color: #ff6b6b; padding: 20px;\'>Foto KK tidak dapat dimuat</p>';">
+                    <img src="<?php echo htmlspecialchars($data['foto_kk']); ?>" alt="Foto KK">
                     <div class="photo-label">Foto Kartu Keluarga</div>
-                </div>
-                <?php elseif ($data['foto_kk']): ?>
-                <div class="photo-card">
-                    <p style="color: #ff6b6b; padding: 20px;">Foto KK tidak ditemukan<br>
-                    <small>Path: <?php echo htmlspecialchars($data['foto_kk']); ?></small></p>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
         <?php endif; ?>
-        
-        <?php endif; // End if data exists ?>
     </div>
 </body>
 </html>
