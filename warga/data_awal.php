@@ -140,23 +140,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Upload file
-    $foto_ktp = $data['foto_ktp'] ?? null; // Gunakan foto lama jika tidak ada upload baru
-    $foto_kk = $data['foto_kk'] ?? null;   // Gunakan foto lama jika tidak ada upload baru
-    $upload_dir = '../uploads/';
+// Upload file - PERBAIKAN
+$foto_ktp = $data['foto_ktp'] ?? null;
+$foto_kk = $data['foto_kk'] ?? null;
 
-    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+// Ubah upload directory ke folder yang dapat diakses browser
+$upload_dir = 'uploads/'; // Hapus ../
+// Pastikan folder uploads berada di dalam folder yang sama dengan file PHP
 
-    if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === 0) {
+if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
+if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === 0) {
+    // Validasi tipe file
+    $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    $file_type = $_FILES['foto_ktp']['type'];
+    
+    if (in_array($file_type, $allowed_types)) {
         $foto_ktp = $upload_dir . time() . '_ktp_' . basename($_FILES['foto_ktp']['name']);
-        move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp);
+        if (move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp)) {
+            // File berhasil diupload
+        } else {
+            $error = "Gagal mengupload foto KTP";
+        }
+    } else {
+        $error = "Tipe file foto KTP tidak valid. Gunakan JPG, PNG, atau GIF.";
     }
+}
 
-    if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === 0) {
+if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === 0) {
+    $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    $file_type = $_FILES['foto_kk']['type'];
+    
+    if (in_array($file_type, $allowed_types)) {
         $foto_kk = $upload_dir . time() . '_kk_' . basename($_FILES['foto_kk']['name']);
-        move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk);
+        if (move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk)) {
+            // File berhasil diupload
+        } else {
+            $error = "Gagal mengupload foto KK";
+        }
+    } else {
+        $error = "Tipe file foto KK tidak valid. Gunakan JPG, PNG, atau GIF.";
     }
-
+}
     // Jika validasi lolos, simpan ke database
     if (!$error) {
         try {
@@ -539,3 +564,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </script>    
 </body>
 </html>
+
