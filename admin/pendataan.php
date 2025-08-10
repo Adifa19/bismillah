@@ -159,12 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $foto_kk = '';
 
                 if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK) {
-                    $foto_ktp = '../warga/uploads/' . $nik . '_' . time() . '.jpg';
+                    $foto_ktp = '../uploads/' . $nik . '_' . time() . '.jpg';
                     move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp);
                 }
 
                 if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === UPLOAD_ERR_OK) {
-                    $foto_kk = '../warga/uploads/' . $no_kk . '_' . time() . '.jpg';
+                    $foto_kk = '../uploads/' . $no_kk . '_' . time() . '.jpg';
                     move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk);
                 }
                 
@@ -677,12 +677,12 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                     }
                     ?>
                     <tr>
-                        <td class="text-center align-top"><?php echo $no; ?></td>
-                        <td class="text-center align-top">
+                        <td class="text-center"><?php echo $no; ?></td>
+                        <td class="text-center">
                             <?php echo sanitize($family['no_kk']); ?>
                         </td>
-                        <td class="align-top"><?php echo sanitize($family['alamat']); ?></td>
-                        <td class="align-top">
+                        <td><?php echo sanitize($family['alamat']); ?></td>
+                        <td>
                             <?php if ($has_complete_data): ?>
                                 <?php foreach ($kepala_keluarga_list as $k_index => $kepala): 
                                     if (empty($kepala['nama_lengkap'])) continue;
@@ -724,10 +724,10 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <small class="text-muted">Belum ada anggota keluarga</small>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center align-top">
+                        <td class="text-center">
                             <span class="badge bg-info"><?php echo $total_anggota; ?> orang</span>
                         </td>
-                        <td class="text-center align-top">
+                        <td class="text-center">
                             <?php if ($has_complete_data): ?>
                                 <span class="badge <?php echo $all_active ? 'bg-success' : 'bg-danger'; ?>">
                                     <?php echo $all_active ? 'Aktif' : 'Tidak Aktif'; ?>
@@ -736,7 +736,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <span class="badge bg-secondary">Belum Lengkap</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center align-top">
+                        <td class="text-center">
                             <?php if (!empty($status_rumah_display)): ?>
                                 <span class="badge <?php echo $status_rumah_display === 'Pribadi' ? 'bg-success' : 'bg-warning'; ?>">
                                     <?php echo sanitize($status_rumah_display); ?>
@@ -745,7 +745,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <span class="badge bg-secondary">Belum Diisi</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center align-top">
+                        <td class="text-center">
                             <button class="btn btn-sm btn-info" data-bs-toggle="modal" 
                                     data-bs-target="#detailModal<?php echo $no; ?>">
                                 <i class="fas fa-eye"></i> Detail
@@ -860,8 +860,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                                 if (!empty($kepala['foto_ktp'])) {
                                                                     if (file_exists($kepala['foto_ktp'])) {
                                                                         $ktp_path = $kepala['foto_ktp'];
-                                                                    } elseif (file_exists('../warga/uploads/' . $kepala['foto_ktp'])) {
-                                                                        $ktp_path = '../warga/uploads/' . $kepala['foto_ktp'];
+                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
+                                                                        $ktp_path = '../uploads/' . $kepala['foto_ktp'];
                                                                     }
                                                                 }
                                                                 ?>
@@ -893,8 +893,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                                 if (!empty($kepala['foto_kk'])) {
                                                                     if (file_exists($kepala['foto_kk'])) {
                                                                         $kk_path = $kepala['foto_kk'];
-                                                                    } elseif (file_exists('../warga/uploads/' . $kepala['foto_kk'])) {
-                                                                        $kk_path = '../warga/uploads/' . $kepala['foto_kk'];
+                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
+                                                                        $kk_path = '../uploads/' . $kepala['foto_kk'];
                                                                     }
                                                                 }
                                                                 ?>
@@ -915,27 +915,9 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                         </div>
                                                     </div>
                                                 </div>
-
-<!-- Modal untuk preview gambar -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalLabel">Preview Dokumen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="modalImage" src="" alt="Preview" class="img-fluid">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                <a id="modalDownloadBtn" href="" target="_blank" class="btn btn-primary">
-                    <i class="fas fa-download me-1"></i>Download
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
 
                                     <!-- Data Anggota Keluarga -->
                                     <?php if (!empty($anggota_keluarga_list)): ?>
@@ -1027,8 +1009,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                         </div>
                         <div class="col-md-6">
                             <label for="tanggal_lahir" class="form-label">Tanggal Lahir *</label>
-                            <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" 
-                                   max="2008-12-31" required>
+                            <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" required >
                             <div class="invalid-feedback">Tanggal lahir wajib diisi.</div>
                         </div>
                         <div class="col-md-6">
@@ -1478,7 +1459,3 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
-
-
-
-
