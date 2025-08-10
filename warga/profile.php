@@ -521,36 +521,25 @@ function formatTanggalIndonesia($tanggal) {
         </div>
         <?php endif; ?>
         
-        <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
-    <div class="data-card photo-section">
-        <div class="card-title">Dokumen</div> <br>
-        
-        <div class="photo-grid">
-            <?php if ($data['foto_ktp']): 
-                // Bersihkan '../' supaya URL menjadi benar
-                $ktp_path = ltrim(str_replace('../', '', $data['foto_ktp']), '/');
-            ?>
-            <div class="photo-card">
-                <img src="/<?php echo htmlspecialchars($ktp_path); ?>" alt="Foto KTP" 
-                     onerror="this.style.display='none'; this.nextElementSibling.innerHTML='Foto KTP tidak dapat dimuat';">
-                <div class="photo-label">Foto KTP</div>
-            </div>
-            <?php endif; ?>
+         <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
+        <div class="data-card photo-section">
+            <div class="card-title">Dokumen</div> <br>
             
-            <?php if ($data['foto_kk']): 
-                $kk_path = ltrim(str_replace('../', '', $data['foto_kk']), '/');
-            ?>
-            <div class="photo-card">
-                <img src="/<?php echo htmlspecialchars($kk_path); ?>" alt="Foto KK" 
-                     onerror="this.style.display='none'; this.nextElementSibling.innerHTML='Foto KK tidak dapat dimuat';">
-                <div class="photo-label">Foto Kartu Keluarga</div>
+            <div class="photo-grid">
+                            <?php if ($data['foto_ktp']): ?>
+                    <img src="/uploads/<?php echo rawurlencode(basename($data['foto_ktp'])); ?>" alt="Foto KTP">
+                <?php endif; ?>
+
+                <?php if ($data['foto_kk']): ?>
+                    <img src="/uploads/<?php echo rawurlencode(basename($data['foto_kk'])); ?>" alt="Foto KK">
+                <?php endif; ?>
+
             </div>
-            <?php endif; ?>
         </div>
-    </div>
-<?php endif; ?>
+        <?php endif; ?>
     </div>
 </body>
 </html>
+
 
 
