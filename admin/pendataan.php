@@ -786,138 +786,108 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                         </div>
                                     </div>
 
-                                    <!-- Data Kepala Keluarga -->
-                                    <h6 class="mb-3">Kepala Keluarga:</h6>
-                                    <?php foreach ($kepala_keluarga_list as $kepala): ?>
-                                        <div class="card mb-3">
-                                            <div class="card-body">
-                                                <div class="row">
-                                                    <!-- Kolom Kiri -->
-                                                    <div class="col-md-6">
-                                                        <p><strong>Nama:</strong> <?php echo sanitize($kepala['nama_lengkap']); ?></p>
-                                                        <p><strong>NIK:</strong> <?php echo sanitize($kepala['nik']); ?></p>
-                                                        <p><strong>Tanggal Lahir:</strong> <?php echo formatTanggalIndonesia($kepala['tanggal_lahir']); ?></p>
-                                                        <p><strong>Jenis Kelamin:</strong> <?php echo sanitize($kepala['jenis_kelamin']); ?></p>
-                                                         <!-- Form Ubah Status Warga -->
-                                                        <div class="mb-2">
-                                                            <form method="POST" class="d-inline">
-                                                                <input type="hidden" name="id" value="<?php echo $kepala['id']; ?>">
-                                                                <input type="hidden" name="update_status" value="1">
-                                                                <label class="form-label small">Ubah Status Warga:</label>
-                                                                <select name="status" class="form-select form-select-sm" 
-                                                                        onchange="if(confirm('Yakin ingin ubah status warga?')) this.form.submit();">
-                                                                    <option value="Aktif" <?php echo $kepala['status_warga'] === 'Aktif' ? 'selected' : ''; ?>>Aktif</option>
-                                                                    <option value="Tidak Aktif" <?php echo $kepala['status_warga'] === 'Tidak Aktif' ? 'selected' : ''; ?>>Tidak Aktif</option>
-                                                                </select>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Kolom Kanan -->
-                                                    <div class="col-md-6">
-                                                        <p><strong>Pekerjaan:</strong> <?php echo sanitize($kepala['pekerjaan']); ?></p>
-                                                        <p><strong>No. Telp:</strong> <?php echo sanitize($kepala['no_telp']); ?></p>
-                                                        <p><strong>Status:</strong> 
-                                                            <span class="badge <?php echo $kepala['status_warga'] === 'Aktif' ? 'bg-success' : 'bg-danger'; ?>">
-                                                                <?php echo sanitize($kepala['status_warga']); ?>
-                                                            </span>
-                                                        </p>
-                                                        <p><strong>Status Rumah:</strong> 
-                                                            <span class="badge <?php echo ($kepala['status_rumah'] ?? '') === 'Pribadi' ? 'bg-success' : (($kepala['status_rumah'] ?? '') === 'Mengontrak' ? 'bg-warning' : 'bg-secondary'); ?>">
-                                                                <?php echo !empty($kepala['status_rumah']) ? sanitize($kepala['status_rumah']) : 'Belum Diisi'; ?>
-                                                            </span>
-                                                        </p>
-                                                        
-                                                        <!-- Form Ubah Status Rumah -->
-                                                        <div class="mb-2">
-                                                            <form method="POST" class="d-inline">
-                                                                <input type="hidden" name="id" value="<?php echo $kepala['id']; ?>">
-                                                                <input type="hidden" name="update_status_rumah" value="1">
-                                                                <label class="form-label small">Ubah Status Rumah:</label>
-                                                                <select name="status_rumah" class="form-select form-select-sm" 
-                                                                        onchange="if(confirm('Yakin ingin ubah status rumah?')) this.form.submit();">
-                                                                    <option value="">-- Pilih Status Rumah --</option>
-                                                                    <option value="Pribadi" <?php echo ($kepala['status_rumah'] ?? '') === 'Pribadi' ? 'selected' : ''; ?>>Pribadi</option>
-                                                                    <option value="Mengontrak" <?php echo ($kepala['status_rumah'] ?? '') === 'Mengontrak' ? 'selected' : ''; ?>>Mengontrak</option>
-                                                                </select>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Foto Dokumen -->
-                                                <hr>
-                                                <h6 class="text-primary mb-3">Dokumen</h6>
-                                                <div class="row">
-                                                    <!-- Foto KTP -->
-                                                    <div class="col-md-6">
-                                                        <div class="card">
-                                                            <div class="card-header bg-light">
-                                                                <small class="fw-bold">Foto KTP</small>
-                                                            </div>
-                                                            <div class="card-body text-center">
-                                                                <?php 
-                                                                $ktp_path = '';
-                                                                if (!empty($kepala['foto_ktp'])) {
-                                                                    if (file_exists($kepala['foto_ktp'])) {
-                                                                        $ktp_path = $kepala['foto_ktp'];
-                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
-                                                                        $ktp_path = '../uploads/' . $kepala['foto_ktp'];
-                                                                    }
-                                                                }
-                                                                ?>
-                                                                <?php if ($ktp_path): ?>
-                                                                    <img src="<?= htmlspecialchars($ktp_path) ?>" 
-                                                                        alt="Foto KTP" class="img-fluid img-thumbnail mb-2"
-                                                                        style="max-height: 200px;">
-                                                                    <br>
-                                                                    <a href="<?= htmlspecialchars($ktp_path) ?>" target="_blank" 
-                                                                    class="btn btn-sm btn-outline-primary">
-                                                                        <i class="fas fa-external-link-alt me-1"></i>Lihat Full
-                                                                    </a>
-                                                                <?php else: ?>
-                                                                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
-                                                                    <br><small class="text-muted">Foto KTP tidak tersedia</small>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Foto KK -->
-                                                    <div class="col-md-6">
-                                                        <div class="card">
-                                                            <div class="card-header bg-light">
-                                                                <small class="fw-bold">Foto Kartu Keluarga</small>
-                                                            </div>
-                                                            <div class="card-body text-center">
-                                                                <?php 
-                                                                $kk_path = '';
-                                                                if (!empty($kepala['foto_kk'])) {
-                                                                    if (file_exists($kepala['foto_kk'])) {
-                                                                        $kk_path = $kepala['foto_kk'];
-                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
-                                                                        $kk_path = '../uploads/' . $kepala['foto_kk'];
-                                                                    }
-                                                                }
-                                                                ?>
-                                                                <?php if ($kk_path): ?>
-                                                                    <img src="<?= htmlspecialchars($kk_path) ?>" 
-                                                                        alt="Foto KK" class="img-fluid img-thumbnail mb-2"
-                                                                        style="max-height: 200px;">
-                                                                    <br>
-                                                                    <a href="<?= htmlspecialchars($kk_path) ?>" target="_blank" 
-                                                                    class="btn btn-sm btn-outline-primary">
-                                                                        <i class="fas fa-external-link-alt me-1"></i>Lihat Full
-                                                                    </a>
-                                                                <?php else: ?>
-                                                                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
-                                                                    <br><small class="text-muted">Foto KK tidak tersedia</small>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
+                                   <!-- Foto Dokumen -->
+<hr>
+<h6 class="text-primary mb-3">Dokumen</h6>
+<div class="row">
+    <!-- Foto KTP -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <small class="fw-bold">Foto KTP</small>
+            </div>
+            <div class="card-body text-center">
+                <?php 
+                $ktp_path = '';
+                if (!empty($kepala['foto_ktp'])) {
+                    $ktp_path = $kepala['foto_ktp'];
+                    
+                    // Konversi path untuk admin
+                    // Dari '../uploads/filename.jpg' menjadi '../warga/uploads/filename.jpg'
+                    if (strpos($ktp_path, '../uploads/') === 0) {
+                        $ktp_path = str_replace('../uploads/', '../warga/uploads/', $ktp_path);
+                    } elseif (strpos($ktp_path, 'uploads/') === 0) {
+                        $ktp_path = '../warga/' . $ktp_path;
+                    }
+                }
+                ?>
+                <?php if ($ktp_path && file_exists($ktp_path)): ?>
+                    <img src="<?= htmlspecialchars($ktp_path) ?>" 
+                        alt="Foto KTP" class="img-fluid img-thumbnail mb-2"
+                        style="max-height: 200px;"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                        <p class="text-muted mb-1">Foto KTP tidak dapat ditampilkan</p>
+                        <small class="text-muted"><?= htmlspecialchars($kepala['foto_ktp']) ?></small>
+                    </div>
+                    <br>
+                    <a href="<?= htmlspecialchars($ktp_path) ?>" target="_blank" 
+                    class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-1"></i>Lihat Full
+                    </a>
+                <?php elseif (!empty($kepala['foto_ktp'])): ?>
+                    <div style="padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted mb-1">File foto KTP tidak ditemukan</p>
+                        <small class="text-muted">Path: <?= htmlspecialchars($kepala['foto_ktp']) ?></small>
+                    </div>
+                <?php else: ?>
+                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                    <br><small class="text-muted">Foto KTP tidak tersedia</small>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Foto KK -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <small class="fw-bold">Foto Kartu Keluarga</small>
+            </div>
+            <div class="card-body text-center">
+                <?php 
+                $kk_path = '';
+                if (!empty($kepala['foto_kk'])) {
+                    $kk_path = $kepala['foto_kk'];
+                    
+                    // Konversi path untuk admin
+                    // Dari '../uploads/filename.jpg' menjadi '../warga/uploads/filename.jpg'
+                    if (strpos($kk_path, '../uploads/') === 0) {
+                        $kk_path = str_replace('../uploads/', '../warga/uploads/', $kk_path);
+                    } elseif (strpos($kk_path, 'uploads/') === 0) {
+                        $kk_path = '../warga/' . $kk_path;
+                    }
+                }
+                ?>
+                <?php if ($kk_path && file_exists($kk_path)): ?>
+                    <img src="<?= htmlspecialchars($kk_path) ?>" 
+                        alt="Foto KK" class="img-fluid img-thumbnail mb-2"
+                        style="max-height: 200px;"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                        <p class="text-muted mb-1">Foto KK tidak dapat ditampilkan</p>
+                        <small class="text-muted"><?= htmlspecialchars($kepala['foto_kk']) ?></small>
+                    </div>
+                    <br>
+                    <a href="<?= htmlspecialchars($kk_path) ?>" target="_blank" 
+                    class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-1"></i>Lihat Full
+                    </a>
+                <?php elseif (!empty($kepala['foto_kk'])): ?>
+                    <div style="padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted mb-1">File foto KK tidak ditemukan</p>
+                        <small class="text-muted">Path: <?= htmlspecialchars($kepala['foto_kk']) ?></small>
+                    </div>
+                <?php else: ?>
+                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                    <br><small class="text-muted">Foto KK tidak tersedia</small>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
 
                                     <!-- Data Anggota Keluarga -->
                                     <?php if (!empty($anggota_keluarga_list)): ?>
@@ -1460,3 +1430,4 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
+
