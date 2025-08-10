@@ -154,19 +154,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return;
                 }
 
-                // Handle file uploads
-                $foto_ktp = '';
-                $foto_kk = '';
+            // Handle file uploads
+$foto_ktp = '';
+$foto_kk = '';
 
-                if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK) {
-                    $foto_ktp = '../uploads/' . $nik . '_' . time() . '.jpg';
-                    move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp);
-                }
+if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK) {
+    // Path untuk menyimpan file (dari konteks admin ke folder warga/uploads)
+    $upload_path = '../warga/uploads/' . $nik . '_' . time() . '.jpg';
+    
+    // Path untuk disimpan di database (relatif dari konteks warga)
+    $foto_ktp = '../uploads/' . $nik . '_' . time() . '.jpg';
+    
+    // Pastikan folder uploads ada
+    if (!is_dir('../warga/uploads/')) {
+        mkdir('../warga/uploads/', 0755, true);
+    }
+    
+    if (move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $upload_path)) {
+        // File berhasil diupload
+    } else {
+        // Handle error upload
+        $foto_ktp = '';
+        echo "Error uploading KTP file.";
+    }
+}
 
-                if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === UPLOAD_ERR_OK) {
-                    $foto_kk = '../uploads/' . $no_kk . '_' . time() . '.jpg';
-                    move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk);
-                }
+if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === UPLOAD_ERR_OK) {
+    // Path untuk menyimpan file (dari konteks admin ke folder warga/uploads)
+    $upload_path = '../warga/uploads/' . $no_kk . '_' . time() . '.jpg';
+    
+    // Path untuk disimpan di database (relatif dari konteks warga)
+    $foto_kk = '../uploads/' . $no_kk . '_' . time() . '.jpg';
+    
+    // Pastikan folder uploads ada
+    if (!is_dir('../warga/uploads/')) {
+        mkdir('../warga/uploads/', 0755, true);
+    }
+    
+    if (move_uploaded_file($_FILES['foto_kk']['tmp_name'], $upload_path)) {
+        // File berhasil diupload
+    } else {
+        // Handle error upload
+        $foto_kk = '';
+        echo "Error uploading KK file.";
+    }
+}
                 
                 // Jika ada data kepala keluarga yang diisi
                 if (!empty($nama_lengkap) && !empty($nik)) {
@@ -1430,4 +1462,5 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
+
 
