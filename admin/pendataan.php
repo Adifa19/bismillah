@@ -159,12 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $foto_kk = '';
 
                 if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === UPLOAD_ERR_OK) {
-                    $foto_ktp = '../uploads/' . $nik . '_' . time() . '.jpg';
+                    $foto_ktp = '../warga/uploads/' . $nik . '_' . time() . '.jpg';
                     move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp);
                 }
 
                 if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === UPLOAD_ERR_OK) {
-                    $foto_kk = '../uploads/' . $no_kk . '_' . time() . '.jpg';
+                    $foto_kk = '../warga/uploads/' . $no_kk . '_' . time() . '.jpg';
                     move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk);
                 }
                 
@@ -860,8 +860,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                                 if (!empty($kepala['foto_ktp'])) {
                                                                     if (file_exists($kepala['foto_ktp'])) {
                                                                         $ktp_path = $kepala['foto_ktp'];
-                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
-                                                                        $ktp_path = '../uploads/' . $kepala['foto_ktp'];
+                                                                    } elseif (file_exists('../warga/uploads/' . $kepala['foto_ktp'])) {
+                                                                        $ktp_path = '../warga/uploads/' . $kepala['foto_ktp'];
                                                                     }
                                                                 }
                                                                 ?>
@@ -893,8 +893,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                                 if (!empty($kepala['foto_kk'])) {
                                                                     if (file_exists($kepala['foto_kk'])) {
                                                                         $kk_path = $kepala['foto_kk'];
-                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
-                                                                        $kk_path = '../uploads/' . $kepala['foto_kk'];
+                                                                    } elseif (file_exists('../warga/uploads/' . $kepala['foto_kk'])) {
+                                                                        $kk_path = '../warga/uploads/' . $kepala['foto_kk'];
                                                                     }
                                                                 }
                                                                 ?>
@@ -1460,3 +1460,4 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
+
