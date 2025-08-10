@@ -860,8 +860,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                                 if (!empty($kepala['foto_ktp'])) {
                                                                     if (file_exists($kepala['foto_ktp'])) {
                                                                         $ktp_path = $kepala['foto_ktp'];
-                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
-                                                                        $ktp_path = '../uploads/' . $kepala['foto_ktp'];
+                                                                    } elseif (file_exists('../warga/uploads/' . $kepala['foto_ktp'])) {
+                                                                        $ktp_path = '../warga/uploads/' . $kepala['foto_ktp'];
                                                                     }
                                                                 }
                                                                 ?>
@@ -893,8 +893,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                                 if (!empty($kepala['foto_kk'])) {
                                                                     if (file_exists($kepala['foto_kk'])) {
                                                                         $kk_path = $kepala['foto_kk'];
-                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
-                                                                        $kk_path = '../uploads/' . $kepala['foto_kk'];
+                                                                    } elseif (file_exists('../warga/uploads/' . $kepala['foto_kk'])) {
+                                                                        $kk_path = '../warga/uploads/' . $kepala['foto_kk'];
                                                                     }
                                                                 }
                                                                 ?>
@@ -1478,6 +1478,7 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
+
 
 
 
