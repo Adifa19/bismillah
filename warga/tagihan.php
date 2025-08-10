@@ -1,10 +1,6 @@
-<?php
+<?php 
 require_once '../config.php';
 requireLogin();
-
-// Initialize variables
-$message = '';
-$message_type = '';
 
 // Fungsi untuk membuat atau mengupdate user_bill
 function createOrUpdateUserBill($pdo, $bill_id, $user_id) {
@@ -61,13 +57,17 @@ if (isset($_POST['action'])) {
                 $stmt->execute([$user_id]);
                 $user = $stmt->fetch();
                 
+                if (!$user) {
+                    throw new Exception('User tidak ditemukan');
+                }
+                
                 // Create atau update user_bill
                 $user_bill_id = createOrUpdateUserBill($pdo, $bill_id, $user_id);
                 
                 // Generate order ID
                 $order_id = $bill['kode_tagihan'];
                 
-                // Update payment token
+                // Update payment token dan midtrans_order_id
                 $stmt = $pdo->prepare("UPDATE user_bills SET payment_token = ?, midtrans_order_id = ? WHERE id = ?");
                 $stmt->execute([$order_id, $order_id, $user_bill_id]);
                 
@@ -78,7 +78,7 @@ if (isset($_POST['action'])) {
                     'phone' => '08123456789'
                 );
                 
-                // Dapatkan Snap Token
+                // Dapatkan Snap Token (pastikan fungsi ini sudah terdefinisi)
                 $snap_token = getMidtransSnapToken($order_id, $bill['jumlah'], $customer_details);
                 
                 echo json_encode([
@@ -153,62 +153,62 @@ if (isset($_POST['action'])) {
                 break;
                 
             case 'upload_bukti':
-    $user_bill_id = $_POST['user_bill_id'];
+                $user_bill_id = $_POST['user_bill_id'];
 
-    // Validasi upload file
-    if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] != 0) {
-        throw new Exception('File bukti pembayaran tidak ditemukan atau gagal diupload');
-    }
+                // Validasi upload file
+                if (!isset($_FILES['bukti_pembayaran']) || $_FILES['bukti_pembayaran']['error'] != 0) {
+                    throw new Exception('File bukti pembayaran tidak ditemukan atau gagal diupload');
+                }
 
-    $file = $_FILES['bukti_pembayaran'];
-    $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
+                $file = $_FILES['bukti_pembayaran'];
+                $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
 
-    if (!in_array($file['type'], $allowed_types)) {
-        throw new Exception('Tipe file tidak diizinkan. Gunakan JPG, JPEG, atau PNG');
-    }
+                if (!in_array($file['type'], $allowed_types)) {
+                    throw new Exception('Tipe file tidak diizinkan. Gunakan JPG, JPEG, atau PNG');
+                }
 
-    if ($file['size'] > 5 * 1024 * 1024) { // 5MB
-        throw new Exception('Ukuran file terlalu besar. Maksimal 5MB');
-    }
+                if ($file['size'] > 5 * 1024 * 1024) { // 5MB
+                    throw new Exception('Ukuran file terlalu besar. Maksimal 5MB');
+                }
 
-    // Path upload absolut berdasarkan direktori file ini
-    $upload_dir = __DIR__ . '/uploads/bukti_pembayaran/';
-    if (!is_dir($upload_dir)) {
-        if (!mkdir($upload_dir, 0755, true)) {
-            throw new Exception('Gagal membuat direktori upload');
-        }
-    }
+                // Path upload absolut berdasarkan direktori file ini
+                $upload_dir = __DIR__ . '/uploads/bukti_pembayaran/';
+                if (!is_dir($upload_dir)) {
+                    if (!mkdir($upload_dir, 0755, true)) {
+                        throw new Exception('Gagal membuat direktori upload');
+                    }
+                }
 
-    // Pastikan folder bisa ditulis
-    if (!is_writable($upload_dir)) {
-        throw new Exception('Folder upload tidak bisa ditulis. Periksa permission.');
-    }
+                // Pastikan folder bisa ditulis
+                if (!is_writable($upload_dir)) {
+                    throw new Exception('Folder upload tidak bisa ditulis. Periksa permission.');
+                }
 
-    // Generate nama file unik
-    $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $file_name = 'bukti_' . $user_bill_id . '_' . time() . '.' . $file_ext;
-    $file_path = $upload_dir . $file_name;
+                // Generate nama file unik
+                $file_ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $file_name = 'bukti_' . $user_bill_id . '_' . time() . '.' . $file_ext;
+                $file_path = $upload_dir . $file_name;
 
-    // Upload file
-    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
-        throw new Exception('Gagal mengupload file ke server. Cek permission folder uploads');
-    }
+                // Upload file
+                if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+                    throw new Exception('Gagal mengupload file ke server. Cek permission folder uploads');
+                }
 
-    // Simpan hanya nama file ke database
-    $stmt = $pdo->prepare("
-        UPDATE user_bills 
-        SET bukti_pembayaran = ?, 
-            tanggal_upload = NOW(), 
-            status = 'menunggu_konfirmasi'
-        WHERE id = ?
-    ");
-    $stmt->execute([$file_name, $user_bill_id]);
+                // Simpan hanya nama file ke database
+                $stmt = $pdo->prepare("
+                    UPDATE user_bills 
+                    SET bukti_pembayaran = ?, 
+                        tanggal_upload = NOW(), 
+                        status = 'menunggu_konfirmasi'
+                    WHERE id = ?
+                ");
+                $stmt->execute([$file_name, $user_bill_id]);
 
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Bukti pembayaran berhasil diupload'
-    ]);
-    break;
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'Bukti pembayaran berhasil diupload'
+                ]);
+                break;
 
             default:
                 throw new Exception('Action tidak valid');
@@ -222,7 +222,18 @@ if (isset($_POST['action'])) {
     exit;
 }
 
-// Ambil statistik
+// Ambil tanggal daftar user terlebih dahulu
+$stmt = $pdo->prepare("SELECT created_at FROM users WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user_data = $stmt->fetch();
+
+if (!$user_data) {
+    die('User tidak ditemukan.');
+}
+
+$tanggal_daftar = $user_data['created_at'];
+
+// Ambil statistik dengan filter tanggal tagihan >= tanggal daftar user
 $stmt = $pdo->prepare("
     SELECT 
         COUNT(CASE WHEN ub.status IS NULL OR ub.status = 'menunggu_pembayaran' THEN 1 END) as belum_bayar,
@@ -233,11 +244,12 @@ $stmt = $pdo->prepare("
         COUNT(CASE WHEN b.tenggat_waktu < CURDATE() AND (ub.status IS NULL OR ub.status = 'menunggu_pembayaran') THEN 1 END) as terlambat
     FROM bills b 
     LEFT JOIN user_bills ub ON b.id = ub.bill_id AND ub.user_id = ?
+    WHERE b.tanggal >= ?
 ");
-$stmt->execute([$_SESSION['user_id']]);
+$stmt->execute([$_SESSION['user_id'], $tanggal_daftar]);
 $stats = $stmt->fetch();
 
-// Ambil daftar tagihan dengan join ke user_bills
+// Ambil daftar tagihan dengan join ke user_bills dan filter tanggal >= tanggal daftar user
 $stmt = $pdo->prepare("
     SELECT b.*, 
            ub.status, 
@@ -252,10 +264,11 @@ $stmt = $pdo->prepare("
            END as is_overdue
     FROM bills b 
     LEFT JOIN user_bills ub ON b.id = ub.bill_id AND ub.user_id = ?
-    WHERE ub.status IN ('menunggu_pembayaran', 'tolak') OR ub.status IS NULL
+    WHERE (ub.status IN ('menunggu_pembayaran', 'tolak') OR ub.status IS NULL)
+      AND b.tanggal >= ?
     ORDER BY b.tanggal DESC
 ");
-$stmt->execute([$_SESSION['user_id']]);
+$stmt->execute([$_SESSION['user_id'], $tanggal_daftar]);
 $bills = $stmt->fetchAll();
 ?>
 
@@ -1419,3 +1432,4 @@ document.addEventListener('contextmenu', function(e) {
     </script>
 </body>
 </html>
+
