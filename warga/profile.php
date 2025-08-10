@@ -521,25 +521,65 @@ function formatTanggalIndonesia($tanggal) {
         </div>
         <?php endif; ?>
         
-        <?php 
-$foto_ktp_file = !empty($data['foto_ktp']) ? basename($data['foto_ktp']) : null;
-$foto_kk_file = !empty($data['foto_kk']) ? basename($data['foto_kk']) : null;
-
-if ($foto_ktp_file || $foto_kk_file): ?>
+        <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
 <div class="data-card photo-section">
     <div class="card-title">Dokumen</div> <br>
     
     <div class="photo-grid">
-        <?php if ($foto_ktp_file): ?>
+        <?php if ($data['foto_ktp']): ?>
         <div class="photo-card">
-            <img src="uploads/<?php echo htmlspecialchars($foto_ktp_file); ?>" alt="Foto KTP">
+            <?php
+            // Perbaikan path foto
+            $foto_ktp_path = $data['foto_ktp'];
+            
+            // Jika path dimulai dengan '../', hapus '../'
+            if (strpos($foto_ktp_path, '../') === 0) {
+                $foto_ktp_path = substr($foto_ktp_path, 3);
+            }
+            
+            // Cek apakah file benar-benar ada
+            if (file_exists($foto_ktp_path)): ?>
+                <img src="<?php echo htmlspecialchars($foto_ktp_path); ?>" alt="Foto KTP" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div style="display:none; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                    <p>Foto KTP tidak dapat ditampilkan</p>
+                    <small><?php echo htmlspecialchars($data['foto_ktp']); ?></small>
+                </div>
+            <?php else: ?>
+                <div style="padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                    <p>File foto KTP tidak ditemukan</p>
+                    <small>Path: <?php echo htmlspecialchars($data['foto_ktp']); ?></small>
+                </div>
+            <?php endif; ?>
             <div class="photo-label">Foto KTP</div>
         </div>
         <?php endif; ?>
         
-        <?php if ($foto_kk_file): ?>
+        <?php if ($data['foto_kk']): ?>
         <div class="photo-card">
-            <img src="uploads/<?php echo htmlspecialchars($foto_kk_file); ?>" alt="Foto KK">
+            <?php
+            // Perbaikan path foto
+            $foto_kk_path = $data['foto_kk'];
+            
+            // Jika path dimulai dengan '../', hapus '../'
+            if (strpos($foto_kk_path, '../') === 0) {
+                $foto_kk_path = substr($foto_kk_path, 3);
+            }
+            
+            // Cek apakah file benar-benar ada
+            if (file_exists($foto_kk_path)): ?>
+                <img src="<?php echo htmlspecialchars($foto_kk_path); ?>" alt="Foto KK"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div style="display:none; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                    <p>Foto KK tidak dapat ditampilkan</p>
+                    <small><?php echo htmlspecialchars($data['foto_kk']); ?></small>
+                </div>
+            <?php else: ?>
+                <div style="padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                    <p>File foto KK tidak ditemukan</p>
+                    <small>Path: <?php echo htmlspecialchars($data['foto_kk']); ?></small>
+                </div>
+            <?php endif; ?>
             <div class="photo-label">Foto Kartu Keluarga</div>
         </div>
         <?php endif; ?>
@@ -550,5 +590,6 @@ if ($foto_ktp_file || $foto_kk_file): ?>
     </div>
 </body>
 </html>
+
 
 
