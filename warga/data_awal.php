@@ -143,19 +143,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Upload file
     $foto_ktp = $data['foto_ktp'] ?? null; // Gunakan foto lama jika tidak ada upload baru
     $foto_kk = $data['foto_kk'] ?? null;   // Gunakan foto lama jika tidak ada upload baru
-    $upload_dir = '../uploads/';
+    $upload_dir = 'uploads/';
 
     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
     if (isset($_FILES['foto_ktp']) && $_FILES['foto_ktp']['error'] === 0) {
-        $foto_ktp = $upload_dir . time() . '_ktp_' . basename($_FILES['foto_ktp']['name']);
-        move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp);
-    }
+    $foto_ktp = $upload_dir . time() . '_ktp_' . basename($_FILES['foto_ktp']['name']);
+    move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $foto_ktp);
+}
 
     if (isset($_FILES['foto_kk']) && $_FILES['foto_kk']['error'] === 0) {
-        $foto_kk = $upload_dir . time() . '_kk_' . basename($_FILES['foto_kk']['name']);
-        move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk);
-    }
+    $foto_ktp = $upload_dir . time() . '_kk_' . basename($_FILES['foto_kk']['name']);
+    move_uploaded_file($_FILES['foto_kk']['tmp_name'], $foto_kk);
+}
 
     // Jika validasi lolos, simpan ke database
     if (!$error) {
@@ -540,3 +540,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </script>    
 </body>
 </html>
+
