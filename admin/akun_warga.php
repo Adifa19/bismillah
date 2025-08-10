@@ -68,8 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $stmt->execute([$no_kk]);
                         }
                         
-                        // Create temporary user for this NIK
-                        $temp_username = 'temp_' . $nik;
+                        // Create temporary user for this NIK - FIXED: Shorter username
+                        // Use only last 8 digits of NIK to keep username shorter
+                        $temp_username = 'u' . substr($nik, -8); // This creates username like 'u12345678' (9 chars max)
+                        
+                        // Check if username already exists, if so add suffix
+                        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+                        $stmt->execute([$temp_username]);
+                        if ($stmt->fetch()) {
+                            // Add random suffix if username exists
+                            $temp_username = 'u' . substr($nik, -6) . rand(10, 99); // Still keeps it short
+                        }
+                        
                         $temp_password = password_hash($nik, PASSWORD_DEFAULT); // Default password is NIK
                         
                         $stmt = $pdo->prepare("INSERT INTO users (username, password, no_kk, status_pengguna) VALUES (?, ?, ?, 'Tidak Aktif')");
@@ -81,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt->execute([$user_id, $no_kk, $nik, $nama_lengkap, $jenis_kelamin, $alamat]);
                         
                         $pdo->commit();
-                        $message = "NIK berhasil ditambahkan. Warga dapat mendaftar dengan NIK: $nik";
+                        $message = "NIK berhasil ditambahkan. Username temporary: $temp_username (Password default: NIK)";
                     } catch (Exception $e) {
                         $pdo->rollback();
                         $error = "Error: " . $e->getMessage();
@@ -1269,4 +1279,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
+
 </html>
