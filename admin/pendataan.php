@@ -845,137 +845,76 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                 </div>
 
                                                 <!-- Foto Dokumen -->
-<hr>
-<h6 class="text-primary mb-3">Dokumen</h6>
-<div class="row">
-    <!-- Foto KTP -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-light">
-                <small class="fw-bold">Foto KTP</small>
-            </div>
-            <div class="card-body text-center">
-                <?php 
-                $ktp_path = '';
-                $ktp_display_path = '';
-                
-                if (!empty($kepala['foto_ktp'])) {
-                    // Cek apakah path sudah lengkap (dimulai dengan ../)
-                    if (strpos($kepala['foto_ktp'], '../') === 0) {
-                        $ktp_path = $kepala['foto_ktp'];
-                        $ktp_display_path = $kepala['foto_ktp'];
-                    } else {
-                        // Path relatif, tambahkan prefix untuk admin
-                        $relative_path = '../warga/uploads/' . $kepala['foto_ktp'];
-                        if (file_exists($relative_path)) {
-                            $ktp_path = $relative_path;
-                            $ktp_display_path = $relative_path;
-                        }
-                    }
-                    
-                    // Double check file existence
-                    if (!empty($ktp_path) && !file_exists($ktp_path)) {
-                        $ktp_path = '';
-                        $ktp_display_path = '';
-                    }
-                }
-                ?>
-                <?php if ($ktp_path): ?>
-                    <img src="<?= htmlspecialchars($ktp_display_path) ?>" 
-                         alt="Foto KTP" 
-                         class="img-fluid img-thumbnail mb-2"
-                         style="max-height: 200px; cursor: pointer;"
-                         onclick="showImageModal('<?= htmlspecialchars($ktp_display_path) ?>', 'Foto KTP')">
-                    <br>
-                    <div class="btn-group" role="group">
-                        <a href="<?= htmlspecialchars($ktp_display_path) ?>" 
-                           target="_blank" 
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-external-link-alt me-1"></i>Lihat Full
-                        </a>
-                        <button type="button" 
-                                class="btn btn-sm btn-outline-secondary"
-                                onclick="downloadImage('<?= htmlspecialchars($ktp_display_path) ?>', 'KTP_<?= $kepala['nama'] ?>')">
-                            <i class="fas fa-download me-1"></i>Download
-                        </button>
-                    </div>
-                <?php else: ?>
-                    <div class="text-muted">
-                        <i class="fas fa-image fa-3x mb-2"></i>
-                        <br><small>Foto KTP tidak tersedia</small>
-                        <?php if (!empty($kepala['foto_ktp'])): ?>
-                            <br><small class="text-danger">File tidak ditemukan: <?= htmlspecialchars($kepala['foto_ktp']) ?></small>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Foto KK -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-light">
-                <small class="fw-bold">Foto Kartu Keluarga</small>
-            </div>
-            <div class="card-body text-center">
-                <?php 
-                $kk_path = '';
-                $kk_display_path = '';
-                
-                if (!empty($kepala['foto_kk'])) {
-                    // Cek apakah path sudah lengkap (dimulai dengan ../)
-                    if (strpos($kepala['foto_kk'], '../') === 0) {
-                        $kk_path = $kepala['foto_kk'];
-                        $kk_display_path = $kepala['foto_kk'];
-                    } else {
-                        // Path relatif, tambahkan prefix untuk admin
-                        $relative_path = '../warga/uploads/' . $kepala['foto_kk'];
-                        if (file_exists($relative_path)) {
-                            $kk_path = $relative_path;
-                            $kk_display_path = $relative_path;
-                        }
-                    }
-                    
-                    // Double check file existence
-                    if (!empty($kk_path) && !file_exists($kk_path)) {
-                        $kk_path = '';
-                        $kk_display_path = '';
-                    }
-                }
-                ?>
-                <?php if ($kk_path): ?>
-                    <img src="<?= htmlspecialchars($kk_display_path) ?>" 
-                         alt="Foto KK" 
-                         class="img-fluid img-thumbnail mb-2"
-                         style="max-height: 200px; cursor: pointer;"
-                         onclick="showImageModal('<?= htmlspecialchars($kk_display_path) ?>', 'Foto Kartu Keluarga')">
-                    <br>
-                    <div class="btn-group" role="group">
-                        <a href="<?= htmlspecialchars($kk_display_path) ?>" 
-                           target="_blank" 
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-external-link-alt me-1"></i>Lihat Full
-                        </a>
-                        <button type="button" 
-                                class="btn btn-sm btn-outline-secondary"
-                                onclick="downloadImage('<?= htmlspecialchars($kk_display_path) ?>', 'KK_<?= $kepala['nama'] ?>')">
-                            <i class="fas fa-download me-1"></i>Download
-                        </button>
-                    </div>
-                <?php else: ?>
-                    <div class="text-muted">
-                        <i class="fas fa-image fa-3x mb-2"></i>
-                        <br><small>Foto KK tidak tersedia</small>
-                        <?php if (!empty($kepala['foto_kk'])): ?>
-                            <br><small class="text-danger">File tidak ditemukan: <?= htmlspecialchars($kepala['foto_kk']) ?></small>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
+                                                <hr>
+                                                <h6 class="text-primary mb-3">Dokumen</h6>
+                                                <div class="row">
+                                                    <!-- Foto KTP -->
+                                                    <div class="col-md-6">
+                                                        <div class="card">
+                                                            <div class="card-header bg-light">
+                                                                <small class="fw-bold">Foto KTP</small>
+                                                            </div>
+                                                            <div class="card-body text-center">
+                                                                <?php 
+                                                                $ktp_path = '';
+                                                                if (!empty($kepala['foto_ktp'])) {
+                                                                    if (file_exists($kepala['foto_ktp'])) {
+                                                                        $ktp_path = $kepala['foto_ktp'];
+                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
+                                                                        $ktp_path = '../uploads/' . $kepala['foto_ktp'];
+                                                                    }
+                                                                }
+                                                                ?>
+                                                                <?php if ($ktp_path): ?>
+                                                                    <img src="<?= htmlspecialchars($ktp_path) ?>" 
+                                                                        alt="Foto KTP" class="img-fluid img-thumbnail mb-2"
+                                                                        style="max-height: 200px;">
+                                                                    <br>
+                                                                    <a href="<?= htmlspecialchars($ktp_path) ?>" target="_blank" 
+                                                                    class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fas fa-external-link-alt me-1"></i>Lihat Full
+                                                                    </a>
+                                                                <?php else: ?>
+                                                                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                                                                    <br><small class="text-muted">Foto KTP tidak tersedia</small>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Foto KK -->
+                                                    <div class="col-md-6">
+                                                        <div class="card">
+                                                            <div class="card-header bg-light">
+                                                                <small class="fw-bold">Foto Kartu Keluarga</small>
+                                                            </div>
+                                                            <div class="card-body text-center">
+                                                                <?php 
+                                                                $kk_path = '';
+                                                                if (!empty($kepala['foto_kk'])) {
+                                                                    if (file_exists($kepala['foto_kk'])) {
+                                                                        $kk_path = $kepala['foto_kk'];
+                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
+                                                                        $kk_path = '../uploads/' . $kepala['foto_kk'];
+                                                                    }
+                                                                }
+                                                                ?>
+                                                                <?php if ($kk_path): ?>
+                                                                    <img src="<?= htmlspecialchars($kk_path) ?>" 
+                                                                        alt="Foto KK" class="img-fluid img-thumbnail mb-2"
+                                                                        style="max-height: 200px;">
+                                                                    <br>
+                                                                    <a href="<?= htmlspecialchars($kk_path) ?>" target="_blank" 
+                                                                    class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fas fa-external-link-alt me-1"></i>Lihat Full
+                                                                    </a>
+                                                                <?php else: ?>
+                                                                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                                                                    <br><small class="text-muted">Foto KK tidak tersedia</small>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
 <!-- Modal untuk preview gambar -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
@@ -1539,5 +1478,6 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
+
 
 
