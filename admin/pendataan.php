@@ -845,7 +845,6 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                 </div>
 
                                                 <!-- Foto Dokumen -->
-                                                <!-- Foto Dokumen -->
                                                 <hr>
                                                 <h6 class="text-primary mb-3">Dokumen</h6>
                                                 <div class="row">
@@ -858,57 +857,26 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                             <div class="card-body text-center">
                                                                 <?php 
                                                                 $ktp_path = '';
-                                                                $ktp_display_path = '';
-                                                                
                                                                 if (!empty($kepala['foto_ktp'])) {
-                                                                    // Cek jika file exists di path yang tersimpan di database
                                                                     if (file_exists($kepala['foto_ktp'])) {
                                                                         $ktp_path = $kepala['foto_ktp'];
-                                                                        // Convert path untuk browser (hapus ../ untuk display)
-                                                                        $ktp_display_path = str_replace('../', '', $ktp_path);
-                                                                    } 
-                                                                    // Cek dengan menambahkan ../warga/uploads/ jika path di database hanya nama file
-                                                                    elseif (file_exists('../warga/uploads/' . basename($kepala['foto_ktp']))) {
-                                                                        $ktp_path = '../warga/uploads/' . basename($kepala['foto_ktp']);
-                                                                        $ktp_display_path = 'warga/uploads/' . basename($kepala['foto_ktp']);
-                                                                    }
-                                                                    // Cek jika path sudah berupa warga/uploads/filename
-                                                                    elseif (file_exists('../' . $kepala['foto_ktp'])) {
-                                                                        $ktp_path = '../' . $kepala['foto_ktp'];
-                                                                        $ktp_display_path = $kepala['foto_ktp'];
-                                                                    }
-                                                                    // Cek path lama untuk backward compatibility
-                                                                    elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
+                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_ktp'])) {
                                                                         $ktp_path = '../uploads/' . $kepala['foto_ktp'];
-                                                                        $ktp_display_path = 'uploads/' . $kepala['foto_ktp'];
-                                                                    }
-                                                                    // Cek dengan basename untuk path lama
-                                                                    elseif (file_exists('../uploads/' . basename($kepala['foto_ktp']))) {
-                                                                        $ktp_path = '../uploads/' . basename($kepala['foto_ktp']);
-                                                                        $ktp_display_path = 'uploads/' . basename($kepala['foto_ktp']);
                                                                     }
                                                                 }
                                                                 ?>
-                                                                <?php if ($ktp_display_path && file_exists($ktp_path)): ?>
-                                                                    <img src="<?= htmlspecialchars($ktp_display_path) ?>" 
+                                                                <?php if ($ktp_path): ?>
+                                                                    <img src="<?= htmlspecialchars($ktp_path) ?>" 
                                                                         alt="Foto KTP" class="img-fluid img-thumbnail mb-2"
-                                                                        style="max-height: 200px;" 
-                                                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                                                    <div style="display:none;">
-                                                                        <i class="fas fa-image fa-3x text-muted mb-2"></i>
-                                                                        <br><small class="text-muted">Foto KTP tidak dapat dimuat</small>
-                                                                    </div>
+                                                                        style="max-height: 200px;">
                                                                     <br>
-                                                                    <a href="<?= htmlspecialchars($ktp_display_path) ?>" target="_blank" 
-                                                                       class="btn btn-sm btn-outline-primary">
+                                                                    <a href="<?= htmlspecialchars($ktp_path) ?>" target="_blank" 
+                                                                    class="btn btn-sm btn-outline-primary">
                                                                         <i class="fas fa-external-link-alt me-1"></i>Lihat Full
                                                                     </a>
                                                                 <?php else: ?>
                                                                     <i class="fas fa-image fa-3x text-muted mb-2"></i>
                                                                     <br><small class="text-muted">Foto KTP tidak tersedia</small>
-                                                                    <?php if (!empty($kepala['foto_ktp'])): ?>
-                                                                        <br><small class="text-danger">Path: <?= htmlspecialchars($kepala['foto_ktp']) ?></small>
-                                                                    <?php endif; ?>
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -922,57 +890,26 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                                             <div class="card-body text-center">
                                                                 <?php 
                                                                 $kk_path = '';
-                                                                $kk_display_path = '';
-                                                                
                                                                 if (!empty($kepala['foto_kk'])) {
-                                                                    // Cek jika file exists di path yang tersimpan di database
                                                                     if (file_exists($kepala['foto_kk'])) {
                                                                         $kk_path = $kepala['foto_kk'];
-                                                                        // Convert path untuk browser (hapus ../ untuk display)
-                                                                        $kk_display_path = str_replace('../', '', $kk_path);
-                                                                    } 
-                                                                    // Cek dengan menambahkan ../warga/uploads/ jika path di database hanya nama file
-                                                                    elseif (file_exists('../warga/uploads/' . basename($kepala['foto_kk']))) {
-                                                                        $kk_path = '../warga/uploads/' . basename($kepala['foto_kk']);
-                                                                        $kk_display_path = 'warga/uploads/' . basename($kepala['foto_kk']);
-                                                                    }
-                                                                    // Cek jika path sudah berupa warga/uploads/filename
-                                                                    elseif (file_exists('../' . $kepala['foto_kk'])) {
-                                                                        $kk_path = '../' . $kepala['foto_kk'];
-                                                                        $kk_display_path = $kepala['foto_kk'];
-                                                                    }
-                                                                    // Cek path lama untuk backward compatibility
-                                                                    elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
+                                                                    } elseif (file_exists('../uploads/' . $kepala['foto_kk'])) {
                                                                         $kk_path = '../uploads/' . $kepala['foto_kk'];
-                                                                        $kk_display_path = 'uploads/' . $kepala['foto_kk'];
-                                                                    }
-                                                                    // Cek dengan basename untuk path lama
-                                                                    elseif (file_exists('../uploads/' . basename($kepala['foto_kk']))) {
-                                                                        $kk_path = '../uploads/' . basename($kepala['foto_kk']);
-                                                                        $kk_display_path = 'uploads/' . basename($kepala['foto_kk']);
                                                                     }
                                                                 }
                                                                 ?>
-                                                                <?php if ($kk_display_path && file_exists($kk_path)): ?>
-                                                                    <img src="<?= htmlspecialchars($kk_display_path) ?>" 
+                                                                <?php if ($kk_path): ?>
+                                                                    <img src="<?= htmlspecialchars($kk_path) ?>" 
                                                                         alt="Foto KK" class="img-fluid img-thumbnail mb-2"
-                                                                        style="max-height: 200px;"
-                                                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                                                    <div style="display:none;">
-                                                                        <i class="fas fa-image fa-3x text-muted mb-2"></i>
-                                                                        <br><small class="text-muted">Foto KK tidak dapat dimuat</small>
-                                                                    </div>
+                                                                        style="max-height: 200px;">
                                                                     <br>
-                                                                    <a href="<?= htmlspecialchars($kk_display_path) ?>" target="_blank" 
-                                                                       class="btn btn-sm btn-outline-primary">
+                                                                    <a href="<?= htmlspecialchars($kk_path) ?>" target="_blank" 
+                                                                    class="btn btn-sm btn-outline-primary">
                                                                         <i class="fas fa-external-link-alt me-1"></i>Lihat Full
                                                                     </a>
                                                                 <?php else: ?>
                                                                     <i class="fas fa-image fa-3x text-muted mb-2"></i>
                                                                     <br><small class="text-muted">Foto KK tidak tersedia</small>
-                                                                    <?php if (!empty($kepala['foto_kk'])): ?>
-                                                                        <br><small class="text-danger">Path: <?= htmlspecialchars($kepala['foto_kk']) ?></small>
-                                                                    <?php endif; ?>
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -1523,4 +1460,3 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
-
