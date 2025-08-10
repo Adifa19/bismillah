@@ -677,12 +677,12 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                     }
                     ?>
                     <tr>
-                        <td class="text-center"><?php echo $no; ?></td>
-                        <td class="text-center">
+                        <td class="text-center align-top"><?php echo $no; ?></td>
+                        <td class="text-center align-top">
                             <?php echo sanitize($family['no_kk']); ?>
                         </td>
-                        <td><?php echo sanitize($family['alamat']); ?></td>
-                        <td>
+                        <td class="align-top"><?php echo sanitize($family['alamat']); ?></td>
+                        <td class="align-top">
                             <?php if ($has_complete_data): ?>
                                 <?php foreach ($kepala_keluarga_list as $k_index => $kepala): 
                                     if (empty($kepala['nama_lengkap'])) continue;
@@ -724,10 +724,10 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <small class="text-muted">Belum ada anggota keluarga</small>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <span class="badge bg-info"><?php echo $total_anggota; ?> orang</span>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <?php if ($has_complete_data): ?>
                                 <span class="badge <?php echo $all_active ? 'bg-success' : 'bg-danger'; ?>">
                                     <?php echo $all_active ? 'Aktif' : 'Tidak Aktif'; ?>
@@ -736,7 +736,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <span class="badge bg-secondary">Belum Lengkap</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <?php if (!empty($status_rumah_display)): ?>
                                 <span class="badge <?php echo $status_rumah_display === 'Pribadi' ? 'bg-success' : 'bg-warning'; ?>">
                                     <?php echo sanitize($status_rumah_display); ?>
@@ -745,7 +745,7 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                                 <span class="badge bg-secondary">Belum Diisi</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center align-top">
                             <button class="btn btn-sm btn-info" data-bs-toggle="modal" 
                                     data-bs-target="#detailModal<?php echo $no; ?>">
                                 <i class="fas fa-eye"></i> Detail
@@ -1009,7 +1009,8 @@ $rumah_belum_diisi = $stmt->fetchColumn();
                         </div>
                         <div class="col-md-6">
                             <label for="tanggal_lahir" class="form-label">Tanggal Lahir *</label>
-                            <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" required >
+                            <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir" 
+                                   max="2008-12-31" required>
                             <div class="invalid-feedback">Tanggal lahir wajib diisi.</div>
                         </div>
                         <div class="col-md-6">
