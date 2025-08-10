@@ -521,27 +521,33 @@ function formatTanggalIndonesia($tanggal) {
         </div>
         <?php endif; ?>
         
-        <?php if ($data['foto_ktp'] || $data['foto_kk']): ?>
-        <div class="data-card photo-section">
-            <div class="card-title">Dokumen</div> <br>
-            
-            <div class="photo-grid">
-                <?php if ($data['foto_ktp']): ?>
-                <div class="photo-card">
-                    <img src="<?php echo htmlspecialchars($data['foto_ktp']); ?>" alt="Foto KTP">
-                    <div class="photo-label">Foto KTP</div>
-                </div>
-                <?php endif; ?>
-                
-                <?php if ($data['foto_kk']): ?>
-                <div class="photo-card">
-                    <img src="<?php echo htmlspecialchars($data['foto_kk']); ?>" alt="Foto KK">
-                    <div class="photo-label">Foto Kartu Keluarga</div>
-                </div>
-                <?php endif; ?>
-            </div>
+        <?php 
+$foto_ktp_file = !empty($data['foto_ktp']) ? basename($data['foto_ktp']) : null;
+$foto_kk_file = !empty($data['foto_kk']) ? basename($data['foto_kk']) : null;
+
+if ($foto_ktp_file || $foto_kk_file): ?>
+<div class="data-card photo-section">
+    <div class="card-title">Dokumen</div> <br>
+    
+    <div class="photo-grid">
+        <?php if ($foto_ktp_file): ?>
+        <div class="photo-card">
+            <img src="uploads/<?php echo htmlspecialchars($foto_ktp_file); ?>" alt="Foto KTP">
+            <div class="photo-label">Foto KTP</div>
+        </div>
+        <?php endif; ?>
+        
+        <?php if ($foto_kk_file): ?>
+        <div class="photo-card">
+            <img src="uploads/<?php echo htmlspecialchars($foto_kk_file); ?>" alt="Foto KK">
+            <div class="photo-label">Foto Kartu Keluarga</div>
         </div>
         <?php endif; ?>
     </div>
+</div>
+<?php endif; ?>
+
+    </div>
 </body>
 </html>
+
