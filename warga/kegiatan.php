@@ -395,8 +395,19 @@ $user_name = $_SESSION['username'] ?? 'Warga';
                                     <h3><?= sanitize($kegiatan['judul']) ?></h3>
                                     <span class="badge upcoming">
                                         <?php 
-                                        $days = floor((strtotime($kegiatan['tanggal_kegiatan']) - time()) / (60*60*24));
-                                        echo $days == 0 ? 'Hari ini' : $days . ' hari lagi';
+                                        $today = new DateTime('today');
+$kegiatan_date = new DateTime($kegiatan['tanggal_kegiatan']);
+$diff = $today->diff($kegiatan_date);
+$days = (int)$diff->format('%r%a');
+
+if ($days === 0) {
+    echo "Hari ini";
+} elseif ($days > 0) {
+    echo $days . " hari lagi";
+} else {
+    echo abs($days) . " hari yang lalu";
+}
+
                                         ?>
                                     </span>
                                 </div>
@@ -492,4 +503,5 @@ $user_name = $_SESSION['username'] ?? 'Warga';
         });
     </script>
 </body>
+
 </html>
