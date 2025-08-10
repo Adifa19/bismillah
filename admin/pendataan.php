@@ -1283,9 +1283,6 @@ function generateFamilyMembers() {
                                 <option value="">Pilih Status</option>
                                 <option value="anak" ${existingMember.status_hubungan === 'anak' ? 'selected' : ''}>Anak</option>
                                 <option value="istri" ${existingMember.status_hubungan === 'istri' ? 'selected' : ''}>Istri</option>
-                                <option value="suami" ${existingMember.status_hubungan === 'suami' ? 'selected' : ''}>Suami</option>
-                                <option value="ayah" ${existingMember.status_hubungan === 'ayah' ? 'selected' : ''}>Ayah</option>
-                                <option value="ibu" ${existingMember.status_hubungan === 'ibu' ? 'selected' : ''}>Ibu</option>
                                 <option value="saudara" ${existingMember.status_hubungan === 'saudara' ? 'selected' : ''}>Saudara</option>
                                 <option value="Orangtua" ${existingMember.status_hubungan === 'orangtua' ? 'selected' : ''}>Orang Tua</option>
                                 <option value="cucu" ${existingMember.status_hubungan === 'cucu' ? 'selected' : ''}>Cucu</option>
@@ -1462,5 +1459,6 @@ document.addEventListener('DOMContentLoaded', initializeForm);
     </style>
 </body>
 </html>
+
 
 
