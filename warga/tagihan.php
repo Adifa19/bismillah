@@ -233,23 +233,23 @@ if (!$user_data) {
 
 $tanggal_daftar = $user_data['created_at'];
 
-// Ambil statistik dengan filter tanggal tagihan >= tanggal daftar user
+// PERBAIKAN: Hanya ambil statistik dari tagihan yang sudah dikirim ke user (ada di user_bills)
 $stmt = $pdo->prepare("
     SELECT 
-        COUNT(CASE WHEN ub.status IS NULL OR ub.status = 'menunggu_pembayaran' THEN 1 END) as belum_bayar,
-        SUM(CASE WHEN ub.status IS NULL OR ub.status = 'menunggu_pembayaran' THEN b.jumlah ELSE 0 END) as total_belum_bayar,
+        COUNT(CASE WHEN ub.status = 'menunggu_pembayaran' THEN 1 END) as belum_bayar,
+        SUM(CASE WHEN ub.status = 'menunggu_pembayaran' THEN b.jumlah ELSE 0 END) as total_belum_bayar,
         COUNT(CASE WHEN ub.status = 'menunggu_konfirmasi' THEN 1 END) as menunggu_konfirmasi,
         COUNT(CASE WHEN ub.status = 'konfirmasi' THEN 1 END) as sudah_bayar,
         COUNT(CASE WHEN ub.status = 'tolak' THEN 1 END) as ditolak,
-        COUNT(CASE WHEN b.tenggat_waktu < CURDATE() AND (ub.status IS NULL OR ub.status = 'menunggu_pembayaran') THEN 1 END) as terlambat
-    FROM bills b 
-    LEFT JOIN user_bills ub ON b.id = ub.bill_id AND ub.user_id = ?
-    WHERE b.tanggal >= ?
+        COUNT(CASE WHEN b.tenggat_waktu < CURDATE() AND ub.status = 'menunggu_pembayaran' THEN 1 END) as terlambat
+    FROM user_bills ub
+    INNER JOIN bills b ON b.id = ub.bill_id
+    WHERE ub.user_id = ?
 ");
-$stmt->execute([$_SESSION['user_id'], $tanggal_daftar]);
+$stmt->execute([$_SESSION['user_id']]);
 $stats = $stmt->fetch();
 
-// Ambil daftar tagihan dengan join ke user_bills dan filter tanggal >= tanggal daftar user
+// PERBAIKAN: Hanya ambil tagihan yang sudah dikirim ke user dan belum bayar/ditolak
 $stmt = $pdo->prepare("
     SELECT b.*, 
            ub.status, 
@@ -259,16 +259,16 @@ $stmt = $pdo->prepare("
            ub.id as user_bill_id,
            ub.tanggal as tanggal_kirim,
            CASE 
-               WHEN b.tenggat_waktu < CURDATE() AND (ub.status IS NULL OR ub.status = 'menunggu_pembayaran') THEN 1 
+               WHEN b.tenggat_waktu < CURDATE() AND ub.status = 'menunggu_pembayaran' THEN 1 
                ELSE 0 
            END as is_overdue
-    FROM bills b 
-    LEFT JOIN user_bills ub ON b.id = ub.bill_id AND ub.user_id = ?
-    WHERE (ub.status IN ('menunggu_pembayaran', 'tolak') OR ub.status IS NULL)
-      AND b.tanggal >= ?
+    FROM user_bills ub
+    INNER JOIN bills b ON b.id = ub.bill_id
+    WHERE ub.user_id = ? 
+      AND ub.status IN ('menunggu_pembayaran', 'tolak')
     ORDER BY b.tanggal DESC
 ");
-$stmt->execute([$_SESSION['user_id'], $tanggal_daftar]);
+$stmt->execute([$_SESSION['user_id']]);
 $bills = $stmt->fetchAll();
 ?>
 
@@ -1432,4 +1432,5 @@ document.addEventListener('contextmenu', function(e) {
     </script>
 </body>
 </html>
+
 
